@@ -5,10 +5,7 @@
 // import {
 //   chat,
 //   message,
-//   type MessageDeprecated,
-//   messageDeprecated,
 //   vote,
-//   voteDeprecated,
 // } from '../schema';
 // import { drizzle } from 'drizzle-orm/postgres-js';
 // import { inArray } from 'drizzle-orm';
@@ -43,15 +40,11 @@
 //   isUpvoted: boolean;
 // };
 
-// interface MessageDeprecatedContentPart {
-//   type: string;
-//   content: unknown;
-// }
 
-// function getMessageRank(message: MessageDeprecated): number {
+// function getMessageRank(message: any): number {
 //   if (
 //     message.role === 'assistant' &&
-//     (message.content as MessageDeprecatedContentPart[]).some(
+//     (message.content as any[]).some(
 //       (contentPart) => contentPart.type === 'tool-call',
 //     )
 //   ) {
@@ -60,7 +53,7 @@
 
 //   if (
 //     message.role === 'tool' &&
-//     (message.content as MessageDeprecatedContentPart[]).some(
+//     (message.content as any[]).some(
 //       (contentPart) => contentPart.type === 'tool-result',
 //     )
 //   ) {
@@ -105,13 +98,13 @@
 
 //     const allMessages = await db
 //       .select()
-//       .from(messageDeprecated)
-//       .where(inArray(messageDeprecated.chatId, chatIds));
+//       .from(message)
+//       .where(inArray(message.chatId, chatIds));
 
 //     const allVotes = await db
 //       .select()
-//       .from(voteDeprecated)
-//       .where(inArray(voteDeprecated.chatId, chatIds));
+//       .from(vote)
+//       .where(inArray(vote.chatId, chatIds));
 
 //     const newMessagesToInsert: NewMessageInsert[] = [];
 //     const newVotesToInsert: NewVoteInsert[] = [];

@@ -18,7 +18,6 @@ import type { ArtifactKind } from "@/components/artifact";
 import type { VisibilityType } from "@/components/visibility-selector";
 import { ChatSDKError } from "../errors";
 import type { AppUsage } from "../usage";
-import { generateUUID } from "../utils";
 import {
   type Chat,
   chat,
@@ -70,7 +69,10 @@ export async function createOAuthUser(email: string) {
       email: user.email,
     });
   } catch (_error) {
-    throw new ChatSDKError("bad_request:database", "Failed to create OAuth user");
+    throw new ChatSDKError(
+      "bad_request:database",
+      "Failed to create OAuth user"
+    );
   }
 }
 
@@ -128,7 +130,7 @@ export async function deleteAllChatsByUserId({ userId }: { userId: string }) {
       return { deletedCount: 0 };
     }
 
-    const chatIds = userChats.map(c => c.id);
+    const chatIds = userChats.map((c) => c.id);
 
     await db.delete(vote).where(inArray(vote.chatId, chatIds));
     await db.delete(message).where(inArray(message.chatId, chatIds));
@@ -190,7 +192,8 @@ export async function getChatsByUserId({
         );
       }
 
-      filteredChats = await query(gt(chat.createdAt, selectedChat.createdAt));
+      // For desc order, starting_after means older items (lt)
+      filteredChats = await query(lt(chat.createdAt, selectedChat.createdAt));
     } else if (endingBefore) {
       const [selectedChat] = await db
         .select()
@@ -205,7 +208,8 @@ export async function getChatsByUserId({
         );
       }
 
-      filteredChats = await query(lt(chat.createdAt, selectedChat.createdAt));
+      // For desc order, ending_before means newer items (gt)
+      filteredChats = await query(gt(chat.createdAt, selectedChat.createdAt));
     } else {
       filteredChats = await query();
     }
@@ -216,7 +220,9 @@ export async function getChatsByUserId({
       chats: hasMore ? filteredChats.slice(0, limit) : filteredChats,
       hasMore,
     };
-  } catch (_error) {
+  } catch (error) {
+    // Log the actual error for debugging
+    console.error("Error in getChatsByUserId:", error);
     throw new ChatSDKError(
       "bad_request:database",
       "Failed to get chats by user id"

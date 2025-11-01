@@ -112,11 +112,8 @@ export const {
           return true;
         } catch (error) {
           console.error("Error during Google sign in:", error);
-          // Don't block sign-in for database errors, let it proceed
-          // The user will still have basic info from Google
-          user.id = user.email || "temp-id";
-          user.type = "regular";
-          return true;
+          // Block sign-in on database errors to prevent invalid user IDs
+          return false;
         }
       }
       return true;
