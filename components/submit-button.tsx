@@ -9,9 +9,13 @@ import { Button } from "./ui/button";
 export function SubmitButton({
   children,
   isSuccessful,
+  onClick,
+  type = "submit",
 }: {
   children: React.ReactNode;
   isSuccessful: boolean;
+  onClick?: () => void;
+  type?: "button" | "submit" | "reset";
 }) {
   const { pending } = useFormStatus();
 
@@ -20,7 +24,8 @@ export function SubmitButton({
       aria-disabled={pending || isSuccessful}
       className="relative"
       disabled={pending || isSuccessful}
-      type={pending ? "button" : "submit"}
+      onClick={onClick}
+      type={onClick ? type : (pending ? "button" : "submit")}
     >
       {children}
 
