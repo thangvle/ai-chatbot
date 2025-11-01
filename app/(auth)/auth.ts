@@ -46,8 +46,8 @@ export const {
   debug: process.env.NODE_ENV === "development",
   providers: [
     Google({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      clientId: process.env.GOOGLE_CLIENT_ID ?? "",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
       authorization: {
         params: {
           prompt: "consent",
@@ -84,18 +84,18 @@ export const {
     }),
   ],
   callbacks: {
-    async signIn({ user, account, profile }) {
-      console.log("SignIn callback triggered:", { 
-        provider: account?.provider, 
-        email: user.email, 
-        hasId: !!user.id 
+    async signIn({ user, account }) {
+      console.log("SignIn callback triggered:", {
+        provider: account?.provider,
+        email: user.email,
+        hasId: !!user.id,
       });
-      
+
       if (account?.provider === "google" && user.email) {
         try {
           const users = await getUser(user.email);
           console.log("Found existing users:", users.length);
-          
+
           if (users.length === 0) {
             // Create new user if doesn't exist
             console.log("Creating new OAuth user for:", user.email);

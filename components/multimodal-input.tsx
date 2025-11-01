@@ -250,6 +250,7 @@ function PureMultimodalInput({
         onChange={handleFileChange}
         ref={fileInputRef}
         tabIndex={-1}
+        title="Upload file attachments"
         type="file"
       />
 

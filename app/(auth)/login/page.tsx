@@ -1,8 +1,7 @@
 "use client";
 
-import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 
 import { SubmitButton } from "@/components/submit-button";
@@ -11,7 +10,7 @@ import { toast } from "@/components/toast";
 export default function Page() {
   const router = useRouter();
   const [isSuccessful, setIsSuccessful] = useState(false);
-  const { data: session, status } = useSession();
+  const { status } = useSession();
 
   useEffect(() => {
     if (status === "authenticated") {
