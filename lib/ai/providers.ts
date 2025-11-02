@@ -43,12 +43,12 @@ const openrouter = createOpenRouter({
 export const myProvider = customProvider({
   languageModels: {
     // Using Google Gemini Flash (free, supports tools)
-    "chat-model": openrouter("meta-llama/llama-3.3-70b-instruct:free"),
+    "chat-model": openrouter("nvidia/nemotron-nano-12b-v2-vl:free"),
     "chat-model-reasoning": wrapLanguageModel({
-      model: openrouter("meta-llama/llama-3.3-70b-instruct:free"),
+      model: openrouter("nvidia/nemotron-nano-12b-v2-vl:free"),
       middleware: extractReasoningMiddleware({ tagName: "think" }),
     }),
-    "title-model": openrouter("meta-llama/llama-3.3-70b-instruct:free"),
-    "artifact-model": openrouter("meta-llama/llama-3.3-70b-instruct:free"),
+    "title-model": openrouter("nvidia/nemotron-nano-12b-v2-vl:free"),
+    "artifact-model": openrouter("nvidia/nemotron-nano-12b-v2-vl:free"),
   },
 });

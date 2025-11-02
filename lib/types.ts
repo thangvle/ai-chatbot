@@ -55,4 +55,6 @@ export type Attachment = {
   name: string;
   url: string;
   contentType: string;
+  // Local file object before upload (browser only)
+  file?: File;
 };

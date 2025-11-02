@@ -21,7 +21,7 @@ import { useLocalStorage, useWindowSize } from "usehooks-ts";
 import { saveChatModelAsCookie } from "@/app/(chat)/actions";
 import { SelectItem } from "@/components/ui/select";
 import { chatModels } from "@/lib/ai/models";
-import { myProvider } from "@/lib/ai/providers";
+// import { myProvider } from "@/lib/ai/providers";
 import type { Attachment, ChatMessage } from "@/lib/types";
 import type { AppUsage } from "@/lib/usage";
 import { cn } from "@/lib/utils";
@@ -127,15 +127,56 @@ function PureMultimodalInput({
   };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [uploadQueue, setUploadQueue] = useState<string[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
 
-  const submitForm = useCallback(() => {
+  // Upload file to R2 storage
+  const uploadFile = useCallback(async (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await fetch("/api/files/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const { url, pathname, contentType } = data;
+
+        return {
+          url,
+          name: pathname,
+          contentType,
+        };
+      }
+      const { error } = await response.json();
+      toast.error(error);
+    } catch (_error) {
+      toast.error("Failed to upload file, please try again!");
+    }
+  }, []);
+
+  const submitForm = useCallback(async () => {
     window.history.replaceState({}, "", `/chat/${chatId}`);
+
+    // Upload files that haven't been uploaded yet
+    const uploadedAttachments = await Promise.all(
+      attachments.map(async (attachment) => {
+        if (attachment.file) {
+          // File hasn't been uploaded yet, upload it now
+          const uploaded = await uploadFile(attachment.file);
+          return uploaded || attachment;
+        }
+        // File already uploaded
+        return attachment;
+      })
+    );
 
     sendMessage({
       role: "user",
       parts: [
-        ...attachments.map((attachment) => ({
+        ...uploadedAttachments.map((attachment) => ({
           type: "file" as const,
           url: attachment.url,
           name: attachment.name,
@@ -166,34 +207,8 @@ function PureMultimodalInput({
     width,
     chatId,
     resetHeight,
+    uploadFile,
   ]);
-
-  const uploadFile = useCallback(async (file: File) => {
-    const formData = new FormData();
-    formData.append("file", file);
-
-    try {
-      const response = await fetch("/api/files/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const { url, pathname, contentType } = data;
-
-        return {
-          url,
-          name: pathname,
-          contentType,
-        };
-      }
-      const { error } = await response.json();
-      toast.error(error);
-    } catch (_error) {
-      toast.error("Failed to upload file, please try again!");
-    }
-  }, []);
 
   // const _modelResolver = useMemo(() => {
   //   return myProvider.languageModel(selectedModelId);
@@ -207,42 +222,68 @@ function PureMultimodalInput({
   );
 
   const handleFileChange = useCallback(
-    async (event: ChangeEvent<HTMLInputElement>) => {
+    (event: ChangeEvent<HTMLInputElement>) => {
       const files = Array.from(event.target.files || []);
 
-      setUploadQueue(files.map((file) => file.name));
+      // Store files locally without uploading
+      const fileAttachments = files.map((file) => ({
+        name: file.name,
+        url: "", // Will be set on send
+        contentType: file.type,
+        file, // Store the File object for later upload
+      }));
 
-      try {
-        const uploadPromises = files.map((file) => uploadFile(file));
-        const uploadedAttachments = await Promise.all(uploadPromises);
-        const successfullyUploadedAttachments = uploadedAttachments.filter(
-          (attachment) => attachment !== undefined
-        );
-
-        setAttachments((currentAttachments) => [
-          ...currentAttachments,
-          ...successfullyUploadedAttachments,
-        ]);
-      } catch (error) {
-        console.error("Error uploading files!", error);
-      } finally {
-        setUploadQueue([]);
-      }
+      setAttachments((currentAttachments) => [
+        ...currentAttachments,
+        ...fileAttachments,
+      ]);
     },
-    [setAttachments, uploadFile]
+    [setAttachments]
   );
+
+  function handleDragOver(event: React.DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDragging(true);
+  }
+
+  function handleDragLeave(event: React.DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDragging(false);
+  }
+
+  function handleDrop(event: React.DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDragging(false);
+
+    const files = Array.from(event.dataTransfer.files);
+    if (files.length === 0) return;
+
+    // Store files locally without uploading
+    const fileAttachments = files.map((file) => ({
+      name: file.name,
+      url: "", // Will be set on send
+      contentType: file.type,
+      file, // Store the File object for later upload
+    }));
+
+    setAttachments((currentAttachments) => [
+      ...currentAttachments,
+      ...fileAttachments,
+    ]);
+  }
 
   return (
     <div className={cn("relative flex w-full flex-col gap-4", className)}>
-      {messages.length === 0 &&
-        attachments.length === 0 &&
-        uploadQueue.length === 0 && (
-          <SuggestedActions
-            chatId={chatId}
-            selectedVisibilityType={selectedVisibilityType}
-            sendMessage={sendMessage}
-          />
-        )}
+      {messages.length === 0 && attachments.length === 0 && (
+        <SuggestedActions
+          chatId={chatId}
+          selectedVisibilityType={selectedVisibilityType}
+          sendMessage={sendMessage}
+        />
+      )}
 
       <input
         className="-top-4 -left-4 pointer-events-none fixed size-0.5 opacity-0"
@@ -256,6 +297,9 @@ function PureMultimodalInput({
 
       <PromptInput
         className="rounded-xl border border-border bg-background p-3 shadow-xs transition-all duration-200 focus-within:border-border hover:border-muted-foreground/50"
+        onDragLeave={handleDragLeave}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
         onSubmit={(event) => {
           event.preventDefault();
           if (status !== "ready") {
@@ -265,7 +309,7 @@ function PureMultimodalInput({
           }
         }}
       >
-        {(attachments.length > 0 || uploadQueue.length > 0) && (
+        {attachments.length > 0 && (
           <div
             className="flex flex-row items-end gap-2 overflow-x-scroll"
             data-testid="attachments-preview"
@@ -273,27 +317,15 @@ function PureMultimodalInput({
             {attachments.map((attachment) => (
               <PreviewAttachment
                 attachment={attachment}
-                key={attachment.url}
+                key={attachment.file ? `${attachment.name}-${attachment.file.size}` : attachment.url}
                 onRemove={() => {
                   setAttachments((currentAttachments) =>
-                    currentAttachments.filter((a) => a.url !== attachment.url)
+                    currentAttachments.filter((a) => a !== attachment)
                   );
                   if (fileInputRef.current) {
                     fileInputRef.current.value = "";
                   }
                 }}
-              />
-            ))}
-
-            {uploadQueue.map((filename) => (
-              <PreviewAttachment
-                attachment={{
-                  url: "",
-                  name: filename,
-                  contentType: "",
-                }}
-                isUploading={true}
-                key={filename}
               />
             ))}
           </div>
@@ -332,7 +364,7 @@ function PureMultimodalInput({
           ) : (
             <PromptInputSubmit
               className="size-8 rounded-full bg-primary text-primary-foreground transition-colors duration-200 hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground"
-              disabled={!input.trim() || uploadQueue.length > 0}
+              disabled={!input.trim()}
               status={status}
             >
               <ArrowUpIcon size={14} />

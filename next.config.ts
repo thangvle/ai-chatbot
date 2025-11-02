@@ -9,6 +9,11 @@ const nextConfig: NextConfig = {
       {
         hostname: "avatar.vercel.sh",
       },
+      {
+        // Cloudflare R2 storage hostname for direct file access
+        protocol: "https",
+        hostname: "*.r2.cloudflarestorage.com",
+      },
     ],
   },
 };

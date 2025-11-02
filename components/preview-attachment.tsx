@@ -13,19 +13,25 @@ export const PreviewAttachment = ({
   isUploading?: boolean;
   onRemove?: () => void;
 }) => {
-  const { name, url, contentType } = attachment;
+  const { name, url, contentType, file } = attachment;
+
+  // Generate preview URL from File object for images
+  const imageSource = file && contentType?.startsWith("image")
+    ? URL.createObjectURL(file)
+    : url;
 
   return (
     <div
       className="group relative size-16 overflow-hidden rounded-lg border bg-muted"
       data-testid="input-attachment-preview"
     >
-      {contentType?.startsWith("image") ? (
+      {contentType?.startsWith("image") && imageSource ? (
         <Image
           alt={name ?? "An image attachment"}
           className="size-full object-cover"
           height={64}
-          src={url}
+          src={imageSource}
+          unoptimized={!!file} // Don't optimize blob URLs
           width={64}
         />
       ) : (

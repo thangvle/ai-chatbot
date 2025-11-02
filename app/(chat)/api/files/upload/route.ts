@@ -1,8 +1,10 @@
-import { put } from "@vercel/blob";
+import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-
 import { auth } from "@/app/(auth)/auth";
+import { r2BucketName, r2Client } from "@/lib/blob/r2";
+import { generateUUID } from "@/lib/utils";
 
 // Use Blob instead of File since File is not available in Node.js environment
 const FileSchema = z.object({
@@ -12,9 +14,15 @@ const FileSchema = z.object({
       message: "File size should be less than 5MB",
     })
     // Update the file type based on the kind of files you want to accept
-    .refine((file) => ["image/jpeg", "image/png"].includes(file.type), {
-      message: "File type should be JPEG or PNG",
-    }),
+    .refine(
+      (file) =>
+        ["image/jpeg", "image/png", "image/webp", "application/csv"].includes(
+          file.type
+        ),
+      {
+        message: "File type should be JPEG or PNG or WebP or CSV",
+      }
+    ),
 });
 
 export async function POST(request: Request) {
@@ -48,18 +56,46 @@ export async function POST(request: Request) {
 
     // Get filename from formData since Blob doesn't have name property
     const filename = (formData.get("file") as File).name;
+    const ext = filename.split(".").pop();
+    const uniqueFileName = `${generateUUID()}.${ext}`;
     const fileBuffer = await file.arrayBuffer();
 
     try {
-      const data = await put(`${filename}`, fileBuffer, {
-        access: "public",
+      // const data = await put(`${uniqueFileName}`, fileBuffer, {
+      //   access: "public",
+      // });
+
+      // Upload to R2
+      const command = new PutObjectCommand({
+        Bucket: r2BucketName,
+        Key: uniqueFileName,
+        Body: Buffer.from(fileBuffer),
+        ContentType: file.type,
       });
 
-      return NextResponse.json(data);
+      await r2Client.send(command);
+
+      // Generate a signed GET URL for retrieving the file (valid for 30 days)
+      const getCommand = new GetObjectCommand({
+        Bucket: r2BucketName,
+        Key: uniqueFileName,
+      });
+
+      const signedUrl = await getSignedUrl(r2Client, getCommand, {
+        expiresIn: 3600, // 1 hour in seconds
+      });
+
+      return NextResponse.json({
+        url: signedUrl,
+        pathname: uniqueFileName,
+        contentType: file.type,
+      });
     } catch (_error) {
+      console.error("Upload Error", _error);
       return NextResponse.json({ error: "Upload failed" }, { status: 500 });
     }
   } catch (_error) {
+    console.error("Request Error", _error);
     return NextResponse.json(
       { error: "Failed to process request" },
       { status: 500 }
