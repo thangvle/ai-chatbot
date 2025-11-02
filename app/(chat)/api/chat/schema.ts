@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { chatModels } from "@/lib/ai/models";
 
 const textPartSchema = z.object({
   type: z.enum(["text"]),
@@ -7,12 +8,18 @@ const textPartSchema = z.object({
 
 const filePartSchema = z.object({
   type: z.enum(["file"]),
-  mediaType: z.enum(["image/jpeg", "image/png"]),
+  mediaType: z.enum(["image/jpeg", "image/png", "application/csv"]),
   name: z.string().min(1).max(100),
   url: z.string().url(),
 });
 
 const partSchema = z.union([textPartSchema, filePartSchema]);
+
+// Dynamically generate valid model IDs from the chatModels array
+const validModelIds = chatModels.map((model) => model.id) as [
+  string,
+  ...string[],
+];
 
 export const postRequestBodySchema = z.object({
   id: z.string().uuid(),
@@ -21,7 +28,7 @@ export const postRequestBodySchema = z.object({
     role: z.enum(["user"]),
     parts: z.array(partSchema),
   }),
-  selectedChatModel: z.enum(["chat-model", "chat-model-reasoning", "z-ai/glm-4.5-air:free"]),
+  selectedChatModel: z.enum(validModelIds),
   selectedVisibilityType: z.enum(["public", "private"]),
 });
 

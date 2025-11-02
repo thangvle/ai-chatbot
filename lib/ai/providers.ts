@@ -42,12 +42,13 @@ const openrouter = createOpenRouter({
 
 export const myProvider = customProvider({
   languageModels: {
-    "chat-model": openrouter("meta-llama/llama-4-maverick:free"),
+    // Using Google Gemini Flash (free, supports tools)
+    "chat-model": openrouter("meta-llama/llama-3.3-70b-instruct:free"),
     "chat-model-reasoning": wrapLanguageModel({
-      model: openrouter("meta-llama/llama-4-maverick:free"),
+      model: openrouter("meta-llama/llama-3.3-70b-instruct:free"),
       middleware: extractReasoningMiddleware({ tagName: "think" }),
     }),
-    "title-model": openrouter("meta-llama/llama-4-maverick:free"),
-    "artifact-model": openrouter("meta-llama/llama-4-maverick:free"),
+    "title-model": openrouter("meta-llama/llama-3.3-70b-instruct:free"),
+    "artifact-model": openrouter("meta-llama/llama-3.3-70b-instruct:free"),
   },
 });

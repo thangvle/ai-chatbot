@@ -86,11 +86,13 @@ export function getStreamContext() {
 
 export async function POST(request: Request) {
   let requestBody: PostRequestBody;
-
+  console.log("request.body: ", request.body);
   try {
     const json = await request.json();
     requestBody = postRequestBodySchema.parse(json);
-  } catch (_) {
+    console.log(requestBody);
+  } catch (e) {
+    console.log(e);
     return new ChatSDKError("bad_request:api").toResponse();
   }
 
