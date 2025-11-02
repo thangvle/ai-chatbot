@@ -16,7 +16,11 @@ const filePartSchema = z.object({
     "text/csv",
   ]),
   name: z.string().min(1).max(100),
-  url: z.string().url(),
+  // Allow relative URLs (proxy URLs like /api/files/get?key=...) or absolute URLs
+  url: z.string().min(1).refine(
+    (url) => url.startsWith('/') || url.startsWith('http://') || url.startsWith('https://'),
+    { message: 'URL must be a valid absolute or relative URL' }
+  ),
 });
 
 const partSchema = z.union([textPartSchema, filePartSchema]);

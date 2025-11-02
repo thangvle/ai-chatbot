@@ -22,6 +22,7 @@ import { entitlementsByUserType } from "@/lib/ai/entitlements";
 import type { ChatModel } from "@/lib/ai/models";
 import { type RequestHints, systemPrompt } from "@/lib/ai/prompts";
 import { myProvider } from "@/lib/ai/providers";
+import { analyzeCSV } from "@/lib/ai/tools/analyze-csv";
 import { createDocument } from "@/lib/ai/tools/create-document";
 import { getWeather } from "@/lib/ai/tools/get-weather";
 import { requestSuggestions } from "@/lib/ai/tools/request-suggestions";
@@ -146,7 +147,41 @@ export async function POST(request: Request) {
     }
 
     const messagesFromDb = await getMessagesByChatId({ id });
-    const uiMessages = [...convertToUIMessages(messagesFromDb), message];
+    let uiMessages = [...convertToUIMessages(messagesFromDb), message];
+
+    // Convert CSV files to text hints for the LLM (don't parse yet, let the tool do it)
+    uiMessages = uiMessages.map((msg) => {
+      if (msg.role === "user" && msg.parts) {
+        const processedParts = msg.parts.flatMap((part) => {
+          // Check if this is a CSV file
+          if (
+            part.type === "file" &&
+            (part.mediaType === "text/csv" ||
+              part.mediaType === "application/csv")
+          ) {
+            // Replace CSV file with text hint for the LLM
+            // Include the URL so the analyzeCSV tool can fetch it
+            return [
+              {
+                type: "text" as const,
+                text: `[CSV File Attached: ${part.name}]
+File URL: ${part.url}
+
+Note: Use the analyzeCSV tool with fileUrl="${part.url}" to analyze and visualize this data.`,
+              },
+            ];
+          }
+          // Return non-CSV parts as-is
+          return [part];
+        });
+
+        return {
+          ...msg,
+          parts: processedParts,
+        };
+      }
+      return msg;
+    });
 
     const { longitude, latitude, city, country } = geolocation(request);
 
@@ -190,6 +225,7 @@ export async function POST(request: Request) {
                   "createDocument",
                   "updateDocument",
                   "requestSuggestions",
+                  "analyzeCSV",
                 ],
           experimental_transform: smoothStream({ chunking: "word" }),
           tools: {
@@ -200,6 +236,7 @@ export async function POST(request: Request) {
               session,
               dataStream,
             }),
+            analyzeCSV: analyzeCSV({ dataStream }),
           },
           experimental_telemetry: {
             isEnabled: isProductionEnvironment,

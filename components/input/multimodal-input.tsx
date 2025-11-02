@@ -166,17 +166,27 @@ function PureMultimodalInput({
         if (attachment.file) {
           // File hasn't been uploaded yet, upload it now
           const uploaded = await uploadFile(attachment.file);
-          return uploaded || attachment;
+          if (!uploaded) {
+            // Upload failed, don't include this attachment
+            return null;
+          }
+          return uploaded;
         }
         // File already uploaded
         return attachment;
       })
     );
 
+    // Filter out failed uploads and ensure all have valid URLs
+    const validAttachments = uploadedAttachments.filter(
+      (attachment): attachment is NonNullable<typeof attachment> =>
+        attachment !== null && !!attachment.url
+    );
+
     sendMessage({
       role: "user",
       parts: [
-        ...uploadedAttachments.map((attachment) => ({
+        ...validAttachments.map((attachment) => ({
           type: "file" as const,
           url: attachment.url,
           name: attachment.name,

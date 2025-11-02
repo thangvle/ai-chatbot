@@ -1,6 +1,7 @@
 import type { InferUITool, UIMessage } from "ai";
 import { z } from "zod";
 import type { ArtifactKind } from "@/components/artifact/artifact";
+import type { analyzeCSV } from "./ai/tools/analyze-csv";
 import type { createDocument } from "./ai/tools/create-document";
 import type { getWeather } from "./ai/tools/get-weather";
 import type { requestSuggestions } from "./ai/tools/request-suggestions";
@@ -22,12 +23,14 @@ type updateDocumentTool = InferUITool<ReturnType<typeof updateDocument>>;
 type requestSuggestionsTool = InferUITool<
   ReturnType<typeof requestSuggestions>
 >;
+type analyzeCSVTool = InferUITool<ReturnType<typeof analyzeCSV>>;
 
 export type ChatTools = {
   getWeather: weatherTool;
   createDocument: createDocumentTool;
   updateDocument: updateDocumentTool;
   requestSuggestions: requestSuggestionsTool;
+  analyzeCSV: analyzeCSVTool;
 };
 
 export type CustomUIDataTypes = {
@@ -35,6 +38,7 @@ export type CustomUIDataTypes = {
   imageDelta: string;
   sheetDelta: string;
   codeDelta: string;
+  chartDelta: string;
   suggestion: Suggestion;
   appendMessage: string;
   id: string;
