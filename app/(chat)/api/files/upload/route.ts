@@ -1,4 +1,4 @@
-import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/app/(auth)/auth";
@@ -15,9 +15,13 @@ const FileSchema = z.object({
     // Update the file type based on the kind of files you want to accept
     .refine(
       (file) =>
-        ["image/jpeg", "image/png", "image/webp", "application/csv"].includes(
-          file.type
-        ),
+        [
+          "image/jpeg",
+          "image/png",
+          "image/webp",
+          "application/csv",
+          "text/csv",
+        ].includes(file.type),
       {
         message: "File type should be JPEG or PNG or WebP or CSV",
       }
