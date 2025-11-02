@@ -114,3 +114,26 @@ export function getTextFromMessage(message: ChatMessage): string {
     .map((part) => part.text)
     .join('');
 }
+
+/**
+ * Convert R2 signed URLs to proxy URLs to avoid expiration issues
+ * If the URL is already a proxy URL, return it as-is
+ */
+export function convertToProxyUrl(url: string): string {
+  // Check if it's already a proxy URL
+  if (url.includes('/api/files/get?key=')) {
+    return url;
+  }
+  
+  // Check if it's an R2 URL and extract the key
+  const r2UrlPattern = /.*r2\.cloudflarestorage\.com\/([^?]+)/;
+  const match = url.match(r2UrlPattern);
+  
+  if (match && match[1]) {
+    const key = match[1];
+    return `/api/files/get?key=${key}`;
+  }
+  
+  // Return original URL if it's not an R2 URL
+  return url;
+}

@@ -1,6 +1,7 @@
-import Image from "next/image";
 import type { Attachment } from "@/lib/types";
+import { convertToProxyUrl } from "@/lib/utils";
 import { Loader } from "./elements/loader";
+import { EnhancedImageAttachment } from "./enhanced-image-attachment";
 import { CrossSmallIcon } from "./icons";
 import { Button } from "./ui/button";
 
@@ -15,10 +16,11 @@ export const PreviewAttachment = ({
 }) => {
   const { name, url, contentType, file } = attachment;
 
-  // Generate preview URL from File object for images
-  const imageSource = file && contentType?.startsWith("image")
-    ? URL.createObjectURL(file)
-    : url;
+  // Generate preview URL from File object for images, or convert R2 URL to proxy URL
+  const imageSource =
+    file && contentType?.startsWith("image")
+      ? URL.createObjectURL(file)
+      : convertToProxyUrl(url);
 
   return (
     <div
@@ -26,13 +28,10 @@ export const PreviewAttachment = ({
       data-testid="input-attachment-preview"
     >
       {contentType?.startsWith("image") && imageSource ? (
-        <Image
-          alt={name ?? "An image attachment"}
-          className="size-full object-cover"
-          height={64}
-          src={imageSource}
-          unoptimized={!!file} // Don't optimize blob URLs
-          width={64}
+        <EnhancedImageAttachment
+          attachment={attachment}
+          className="size-full"
+          showEnlargeButton={!isUploading}
         />
       ) : (
         <div className="flex size-full items-center justify-center text-muted-foreground text-xs">

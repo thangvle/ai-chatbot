@@ -40,6 +40,7 @@ export const Suggestion = ({
               <div className="font-medium">Assistant</div>
             </div>
             <button
+              aria-label="Close suggestion"
               className="cursor-pointer text-gray-500 text-xs"
               onClick={() => {
                 setIsExpanded(false);
@@ -60,6 +61,7 @@ export const Suggestion = ({
         </motion.div>
       ) : (
         <motion.div
+          aria-label="Show suggestion"
           className={cn("cursor-pointer p-1 text-muted-foreground", {
             "-right-8 absolute": artifactKind === "text",
             "sticky top-0 right-4": artifactKind === "code",

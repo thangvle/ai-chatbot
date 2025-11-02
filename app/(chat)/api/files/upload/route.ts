@@ -1,5 +1,4 @@
 import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/app/(auth)/auth";
@@ -75,18 +74,11 @@ export async function POST(request: Request) {
 
       await r2Client.send(command);
 
-      // Generate a signed GET URL for retrieving the file (valid for 30 days)
-      const getCommand = new GetObjectCommand({
-        Bucket: r2BucketName,
-        Key: uniqueFileName,
-      });
-
-      const signedUrl = await getSignedUrl(r2Client, getCommand, {
-        expiresIn: 3600, // 1 hour in seconds
-      });
+      // Generate proxy URL instead of signed URL to avoid expiration
+      const proxyUrl = `/api/files/get?key=${uniqueFileName}`;
 
       return NextResponse.json({
-        url: signedUrl,
+        url: proxyUrl,
         pathname: uniqueFileName,
         contentType: file.type,
       });

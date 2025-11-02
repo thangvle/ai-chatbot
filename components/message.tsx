@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { memo, useState } from "react";
 import type { Vote } from "@/lib/db/schema";
 import type { ChatMessage } from "@/lib/types";
-import { cn, sanitizeText } from "@/lib/utils";
+import { cn, convertToProxyUrl, sanitizeText } from "@/lib/utils";
 import { useDataStream } from "./data-stream-provider";
 import { DocumentToolResult } from "./document";
 import { DocumentPreview } from "./document-preview";
@@ -21,6 +21,7 @@ import {
 import { SparklesIcon } from "./icons";
 import { MessageActions } from "./message-actions";
 import { MessageEditor } from "./message-editor";
+import MessageImageAttachment from "./message-image-attachment";
 import { MessageReasoning } from "./message-reasoning";
 import { PreviewAttachment } from "./preview-attachment";
 import { Weather } from "./weather";
@@ -90,19 +91,32 @@ const PurePreviewMessage = ({
         >
           {attachmentsFromMessage.length > 0 && (
             <div
-              className="flex flex-row justify-end gap-2"
+              className="flex flex-row flex-wrap justify-end gap-2"
               data-testid={"message-attachments"}
             >
-              {attachmentsFromMessage.map((attachment) => (
-                <PreviewAttachment
-                  attachment={{
-                    name: attachment.filename ?? "file",
-                    contentType: attachment.mediaType,
-                    url: attachment.url,
-                  }}
-                  key={attachment.url}
-                />
-              ))}
+              {attachmentsFromMessage.map((attachment) => {
+                const isImage = attachment.mediaType?.startsWith("image");
+
+                return isImage ? (
+                  <MessageImageAttachment
+                    attachment={{
+                      name: attachment.filename ?? "file",
+                      contentType: attachment.mediaType,
+                      url: convertToProxyUrl(attachment.url),
+                    }}
+                    key={attachment.url}
+                  />
+                ) : (
+                  <PreviewAttachment
+                    attachment={{
+                      name: attachment.filename ?? "file",
+                      contentType: attachment.mediaType,
+                      url: convertToProxyUrl(attachment.url),
+                    }}
+                    key={attachment.url}
+                  />
+                );
+              })}
             </div>
           )}
 
@@ -328,12 +342,9 @@ export const ThinkingMessage = () => {
         </div>
 
         <div className="flex w-full flex-col gap-2 md:gap-4">
-          <div className="p-0 text-muted-foreground text-sm">
-            Thinking...
-          </div>
+          <div className="p-0 text-muted-foreground text-sm">Thinking...</div>
         </div>
       </div>
     </motion.div>
   );
 };
-

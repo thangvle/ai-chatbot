@@ -259,7 +259,9 @@ function PureMultimodalInput({
     setIsDragging(false);
 
     const files = Array.from(event.dataTransfer.files);
-    if (files.length === 0) return;
+    if (files.length === 0) {
+      return;
+    }
 
     // Store files locally without uploading
     const fileAttachments = files.map((file) => ({
@@ -317,7 +319,11 @@ function PureMultimodalInput({
             {attachments.map((attachment) => (
               <PreviewAttachment
                 attachment={attachment}
-                key={attachment.file ? `${attachment.name}-${attachment.file.size}` : attachment.url}
+                key={
+                  attachment.file
+                    ? `${attachment.name}-${attachment.file.size}`
+                    : attachment.url
+                }
                 onRemove={() => {
                   setAttachments((currentAttachments) =>
                     currentAttachments.filter((a) => a !== attachment)
