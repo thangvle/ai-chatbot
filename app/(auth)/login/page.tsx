@@ -4,8 +4,8 @@ import { useRouter } from "next/navigation";
 import { signIn, useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 
-import { SubmitButton } from "@/components/submit-button";
-import { toast } from "@/components/toast";
+import { SubmitButton } from "@/components/input/submit-button";
+import { toast } from "@/components/shared/toast";
 
 export default function Page() {
   const router = useRouter();

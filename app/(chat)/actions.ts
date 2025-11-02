@@ -2,7 +2,7 @@
 
 import { generateText, type UIMessage } from "ai";
 import { cookies } from "next/headers";
-import type { VisibilityType } from "@/components/visibility-selector";
+import type { VisibilityType } from "@/components/toolbar/visibility-selector";
 import { myProvider } from "@/lib/ai/providers";
 import {
   deleteMessagesByChatIdAfterTimestamp,
