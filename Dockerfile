@@ -15,11 +15,19 @@ WORKDIR /app
 # Dependencies stage - install all dependencies
 FROM base AS deps
 
+# Install build dependencies for native npm modules (node-gyp)
+RUN apk add --no-cache \
+    python3 \
+    make \
+    g++ \
+    gcc \
+    linux-headers
+
 # Copy package files for dependency installation
-COPY package.json ./
+COPY package.json bun.lock* ./
 
 # Install dependencies using bun with frozen lockfile for reproducibility
-RUN bun install
+RUN bun install --frozen-lockfile --production=false
 
 # Build stage - compile the application
 FROM base AS builder
