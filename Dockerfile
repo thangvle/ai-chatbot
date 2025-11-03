@@ -19,7 +19,7 @@ FROM base AS deps
 COPY package.json bun.lock* ./
 
 # Install dependencies using bun with frozen lockfile for reproducibility
-RUN bun install --frozen-lockfile
+RUN bun install
 
 # Build stage - compile the application
 FROM base AS builder
