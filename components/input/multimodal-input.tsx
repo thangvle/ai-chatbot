@@ -235,8 +235,36 @@ function PureMultimodalInput({
     (event: ChangeEvent<HTMLInputElement>) => {
       const files = Array.from(event.target.files || []);
 
-      // Store files locally without uploading
-      const fileAttachments = files.map((file) => ({
+      // Validate files before adding to attachments
+      const validatedFiles = files.filter((file) => {
+        // Check file size (5MB limit)
+        if (file.size > 5 * 1024 * 1024) {
+          toast.error(
+            `${file.name} is too large. Maximum file size is 5MB. Your file is ${(file.size / 1024 / 1024).toFixed(2)}MB.`
+          );
+          return false;
+        }
+
+        // Check file type
+        const allowedTypes = [
+          "image/jpeg",
+          "image/png",
+          "image/webp",
+          "application/csv",
+          "text/csv",
+        ];
+        if (!allowedTypes.includes(file.type)) {
+          toast.error(
+            `${file.name} is not a supported file type. Please upload JPEG, PNG, WebP, or CSV files.`
+          );
+          return false;
+        }
+
+        return true;
+      });
+
+      // Store valid files locally without uploading
+      const fileAttachments = validatedFiles.map((file) => ({
         name: file.name,
         url: "", // Will be set on send
         contentType: file.type,
@@ -247,6 +275,11 @@ function PureMultimodalInput({
         ...currentAttachments,
         ...fileAttachments,
       ]);
+
+      // Reset input to allow selecting the same file again
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     },
     [setAttachments]
   );
@@ -273,8 +306,36 @@ function PureMultimodalInput({
       return;
     }
 
-    // Store files locally without uploading
-    const fileAttachments = files.map((file) => ({
+    // Validate files before adding to attachments
+    const validatedFiles = files.filter((file) => {
+      // Check file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(
+          `${file.name} is too large. Maximum file size is 5MB. Your file is ${(file.size / 1024 / 1024).toFixed(2)}MB.`
+        );
+        return false;
+      }
+
+      // Check file type
+      const allowedTypes = [
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "application/csv",
+        "text/csv",
+      ];
+      if (!allowedTypes.includes(file.type)) {
+        toast.error(
+          `${file.name} is not a supported file type. Please upload JPEG, PNG, WebP, or CSV files.`
+        );
+        return false;
+      }
+
+      return true;
+    });
+
+    // Store valid files locally without uploading
+    const fileAttachments = validatedFiles.map((file) => ({
       name: file.name,
       url: "", // Will be set on send
       contentType: file.type,
