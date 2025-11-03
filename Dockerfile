@@ -24,10 +24,10 @@ RUN apk add --no-cache \
     linux-headers
 
 # Copy package files for dependency installation
-COPY package.json bun.lock* ./
+COPY package.json ./
 
 # Install dependencies using bun with frozen lockfile for reproducibility
-RUN bun install 
+RUN bun install
 # Build stage - compile the application
 FROM base AS builder
 
