@@ -163,7 +163,7 @@ export async function POST(request: Request) {
                   part.mediaType === "application/csv")
               ) {
                 // Store CSV file reference
-                csvFiles.push({ url: part.url, name: part.name });
+                csvFiles.push({ url: part.url, name: part.filename as string });
 
                 try {
                   // Parse CSV and provide summary to LLM
@@ -175,7 +175,7 @@ export async function POST(request: Request) {
                   const analysis = analyzeData(parsed);
 
                   // Create a concise summary for the LLM with clear instructions
-                  const csvSummary = `CSV File Received: "${part.name}"
+                  const csvSummary = `CSV File Received: "${part.filename as string}"
 
 Summary:
 - Rows: ${analysis.summary.totalRows}
@@ -205,7 +205,7 @@ analyzeCSV({
                   console.error("Error parsing CSV summary:", error);
                   return {
                     type: "text" as const,
-                    text: `CSV File Uploaded: "${part.name}"
+                    text: `CSV File Uploaded: "${part.filename}"
 
 The file is stored at: ${part.url}
 

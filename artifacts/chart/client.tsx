@@ -1,77 +1,77 @@
-'use client';
+"use client";
 
 /**
  * Chart Artifact for CSV Data Visualization
  * Displays interactive charts generated from CSV analysis
  */
 
-import { toast } from 'sonner';
-import { Artifact } from '@/components/artifact/create-artifact';
+import { toast } from "sonner";
+import { Artifact } from "@/components/artifact/create-artifact";
 import {
   CopyIcon,
   DownloadIcon,
   LineChartIcon,
+  RedoIcon,
   UndoIcon,
-  RedoIcon
-} from '@/components/shared/icons';
+} from "@/components/shared/icons";
 
 // No special metadata needed for charts
 type ChartArtifactMetadata = Record<string, never>;
 
-export const chartArtifact = new Artifact<'chart', ChartArtifactMetadata>({
-  kind: 'chart',
-  description: 'Interactive data visualization from CSV analysis',
+export const chartArtifact = new Artifact<"chart", ChartArtifactMetadata>({
+  kind: "chart",
+  description: "Interactive data visualization from CSV analysis",
   content: ChartArtifactContent,
   actions: [
     {
       icon: <UndoIcon size={18} />,
-      description: 'View previous version',
+      description: "View previous version",
       onClick: ({ handleVersionChange }) => {
-        handleVersionChange('prev');
+        handleVersionChange("prev");
       },
       isDisabled: ({ currentVersionIndex }) => currentVersionIndex === 0,
     },
     {
       icon: <RedoIcon size={18} />,
-      description: 'View next version',
+      description: "View next version",
       onClick: ({ handleVersionChange }) => {
-        handleVersionChange('next');
+        handleVersionChange("next");
       },
       isDisabled: ({ isCurrentVersion }) => isCurrentVersion,
     },
     {
       icon: <CopyIcon size={18} />,
-      description: 'Copy chart data to clipboard',
+      description: "Copy chart data to clipboard",
       onClick: ({ content }) => {
         try {
           const chartConfig = JSON.parse(content);
           navigator.clipboard.writeText(JSON.stringify(chartConfig, null, 2));
-          toast.success('Chart data copied to clipboard!');
+          toast.success("Chart data copied to clipboard!");
         } catch (error) {
-          toast.error('Failed to copy chart data');
+          toast.error("Failed to copy chart data");
         }
       },
     },
     {
       icon: <DownloadIcon size={18} />,
-      description: 'Download chart as JSON',
+      description: "Download chart as JSON",
       onClick: ({ content }) => {
         try {
           const chartConfig = JSON.parse(content);
           const blob = new Blob([JSON.stringify(chartConfig, null, 2)], {
-            type: 'application/json',
+            type: "application/json",
           });
           const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
+          const a = document.createElement("a");
           a.href = url;
           a.download = `chart-${Date.now()}.json`;
           document.body.appendChild(a);
           a.click();
           document.body.removeChild(a);
           URL.revokeObjectURL(url);
-          toast.success('Chart data downloaded!');
+          toast.success("Chart data downloaded!");
         } catch (error) {
-          toast.error('Failed to download chart data');
+          toast.error("Failed to download chart data");
         }
       },
     },
@@ -79,20 +79,20 @@ export const chartArtifact = new Artifact<'chart', ChartArtifactMetadata>({
   toolbar: [
     {
       icon: <LineChartIcon size={18} />,
-      description: 'Chart visualization',
+      description: "Chart visualization",
       onClick: () => {
         // Placeholder for potential chart type switching
       },
     },
   ],
   onStreamPart: ({ streamPart, setArtifact }) => {
-    if (streamPart.type === 'data-chartDelta') {
+    if (streamPart.type === "data-chartDelta") {
       setArtifact((draftArtifact) => ({
         ...draftArtifact,
         // Replace content instead of concatenating since we send complete JSON in one delta
         content: streamPart.data,
         isVisible: true,
-        status: 'streaming',
+        status: "streaming",
       }));
     }
   },
@@ -108,10 +108,10 @@ function ChartArtifactContent({
   isLoading,
 }: {
   content: string;
-  status: 'streaming' | 'idle';
+  status: "streaming" | "idle";
   isLoading: boolean;
 }) {
-  if (isLoading || (!content && status === 'streaming')) {
+  if (isLoading || (!content && status === "streaming")) {
     return (
       <div className="flex h-full items-center justify-center p-8">
         <div className="space-y-4 text-center text-muted-foreground">
@@ -122,7 +122,7 @@ function ChartArtifactContent({
     );
   }
 
-  if (!content || content.trim() === '') {
+  if (!content || content.trim() === "") {
     return (
       <div className="flex h-full items-center justify-center p-8">
         <div className="text-center text-muted-foreground">
@@ -160,7 +160,7 @@ function ChartArtifactContent({
         <div className="text-center text-destructive">
           <div className="font-semibold text-lg">Failed to render chart</div>
           <div className="mt-2 text-sm">
-            {error instanceof Error ? error.message : 'Invalid chart data'}
+            {error instanceof Error ? error.message : "Invalid chart data"}
           </div>
         </div>
       </div>
@@ -176,18 +176,18 @@ function ChartRenderer({ config }: { config: any }) {
   const { type, data } = config;
 
   switch (type) {
-    case 'column':
-    case 'bar':
+    case "column":
+    case "bar":
       return <BarChart data={data} />;
-    case 'line':
+    case "line":
       return <LineChart data={data} />;
-    case 'pie':
+    case "pie":
       return <PieChart data={data} />;
-    case 'scatter':
+    case "scatter":
       return <ScatterChart data={data} />;
-    case 'histogram':
+    case "histogram":
       return <BarChart data={data} />;
-    case 'area':
+    case "area":
       return <AreaChart data={data} />;
     default:
       return <SimpleDataDisplay data={data} />;
@@ -211,13 +211,10 @@ function BarChart({ data }: { data: any }) {
       {/* Chart Area with Grid */}
       <div className="relative flex flex-1 items-end gap-2">
         {/* Y-axis grid lines */}
-        <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
+        <div className="pointer-events-none absolute inset-0 flex flex-col justify-between">
           {[0, 0.25, 0.5, 0.75, 1].map((tick, i) => (
-            <div
-              key={i}
-              className="border-t border-muted flex items-center"
-            >
-              <span className="text-muted-foreground text-xs -ml-12">
+            <div className="flex items-center border-muted border-t" key={i}>
+              <span className="-ml-12 text-muted-foreground text-xs">
                 {(maxValue * (1 - tick)).toFixed(0)}
               </span>
             </div>
@@ -227,26 +224,29 @@ function BarChart({ data }: { data: any }) {
         {/* Bars */}
         <div className="flex flex-1 items-end gap-2 pl-12">
           {data.labels.map((label: string, index: number) => (
-            <div key={index} className="flex flex-1 flex-col items-center gap-2">
+            <div
+              className="flex flex-1 flex-col items-center gap-2"
+              key={index}
+            >
               {/* Bar Stack */}
-              <div className="flex w-full flex-col-reverse gap-1 h-full justify-end">
+              <div className="flex h-full w-full flex-col-reverse justify-end gap-1">
                 {data.datasets.map((dataset: any, dsIndex: number) => {
                   const value = dataset.data[index];
                   const heightPercent = (value / maxValue) * 100;
 
                   return (
                     <div
+                      className="group relative w-full cursor-pointer rounded-t transition-all hover:opacity-90"
                       key={dsIndex}
-                      className="group relative w-full rounded-t transition-all hover:opacity-90 cursor-pointer"
                       style={{
                         height: `${heightPercent}%`,
-                        minHeight: value > 0 ? '24px' : '0px',
-                        backgroundColor: dataset.backgroundColor || '#3b82f6',
+                        minHeight: value > 0 ? "24px" : "0px",
+                        backgroundColor: dataset.backgroundColor || "#3b82f6",
                       }}
                       title={`${dataset.label}: ${value}`}
                     >
                       {/* Value label on hover */}
-                      <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity bg-background px-1 rounded">
+                      <span className="-top-6 -translate-x-1/2 absolute left-1/2 rounded bg-background px-1 font-medium text-xs opacity-0 transition-opacity group-hover:opacity-100">
                         {value}
                       </span>
                     </div>
@@ -255,7 +255,10 @@ function BarChart({ data }: { data: any }) {
               </div>
 
               {/* X-axis Label */}
-              <div className="w-full truncate text-center text-xs font-medium" title={label}>
+              <div
+                className="w-full truncate text-center font-medium text-xs"
+                title={label}
+              >
                 {label}
               </div>
             </div>
@@ -265,9 +268,9 @@ function BarChart({ data }: { data: any }) {
 
       {/* Legend */}
       {data.datasets.length > 1 && (
-        <div className="flex flex-wrap gap-4 justify-center">
+        <div className="flex flex-wrap justify-center gap-4">
           {data.datasets.map((dataset: any, index: number) => (
-            <div key={index} className="flex items-center gap-2">
+            <div className="flex items-center gap-2" key={index}>
               <div
                 className="h-3 w-3 rounded"
                 style={{ backgroundColor: dataset.backgroundColor }}
@@ -302,10 +305,10 @@ function LineChart({ data }: { data: any }) {
       {/* Chart Area */}
       <div className="relative flex-1">
         {/* Y-axis grid */}
-        <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
+        <div className="pointer-events-none absolute inset-0 flex flex-col justify-between">
           {[0, 0.25, 0.5, 0.75, 1].map((tick, i) => (
-            <div key={i} className="border-t border-muted flex items-center">
-              <span className="text-muted-foreground text-xs -ml-12">
+            <div className="flex items-center border-muted border-t" key={i}>
+              <span className="-ml-12 text-muted-foreground text-xs">
                 {(maxValue - range * tick).toFixed(1)}
               </span>
             </div>
@@ -313,7 +316,11 @@ function LineChart({ data }: { data: any }) {
         </div>
 
         {/* SVG Line Chart */}
-        <svg className="w-full h-full pl-12" viewBox="0 0 100 100" preserveAspectRatio="none">
+        <svg
+          className="h-full w-full pl-12"
+          preserveAspectRatio="none"
+          viewBox="0 0 100 100"
+        >
           {data.datasets.map((dataset: any, dsIndex: number) => {
             const points = dataset.data.map((value: number, i: number) => {
               const x = (i / (dataset.data.length - 1)) * 100;
@@ -325,13 +332,15 @@ function LineChart({ data }: { data: any }) {
               <g key={dsIndex}>
                 {/* Line */}
                 <polyline
-                  points={points.join(' ')}
+                  className="transition-all"
                   fill="none"
-                  stroke={dataset.borderColor || dataset.backgroundColor || '#3b82f6'}
-                  strokeWidth="0.5"
+                  points={points.join(" ")}
+                  stroke={
+                    dataset.borderColor || dataset.backgroundColor || "#3b82f6"
+                  }
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  className="transition-all"
+                  strokeWidth="0.5"
                 />
                 {/* Data points */}
                 {dataset.data.map((value: number, i: number) => {
@@ -339,12 +348,12 @@ function LineChart({ data }: { data: any }) {
                   const y = 100 - ((value - minValue) / range) * 100;
                   return (
                     <circle
-                      key={i}
+                      className="hover:r-2 cursor-pointer transition-all"
                       cx={x}
                       cy={y}
+                      fill={dataset.backgroundColor || "#3b82f6"}
+                      key={i}
                       r="1"
-                      fill={dataset.backgroundColor || '#3b82f6'}
-                      className="hover:r-2 transition-all cursor-pointer"
                     >
                       <title>{`${data.labels[i]}: ${value}`}</title>
                     </circle>
@@ -356,12 +365,19 @@ function LineChart({ data }: { data: any }) {
         </svg>
 
         {/* X-axis labels */}
-        <div className="flex justify-between mt-2 pl-12">
+        <div className="mt-2 flex justify-between pl-12">
           {data.labels.map((label: string, i: number) => {
             // Show only first, middle, and last labels to avoid clutter
-            if (i === 0 || i === Math.floor(data.labels.length / 2) || i === data.labels.length - 1) {
+            if (
+              i === 0 ||
+              i === Math.floor(data.labels.length / 2) ||
+              i === data.labels.length - 1
+            ) {
               return (
-                <span key={i} className="text-xs text-muted-foreground truncate">
+                <span
+                  className="truncate text-muted-foreground text-xs"
+                  key={i}
+                >
                   {label}
                 </span>
               );
@@ -373,9 +389,9 @@ function LineChart({ data }: { data: any }) {
 
       {/* Legend */}
       {data.datasets.length > 1 && (
-        <div className="flex flex-wrap gap-4 justify-center">
+        <div className="flex flex-wrap justify-center gap-4">
           {data.datasets.map((dataset: any, index: number) => (
-            <div key={index} className="flex items-center gap-2">
+            <div className="flex items-center gap-2" key={index}>
               <div
                 className="h-3 w-3 rounded-full"
                 style={{ backgroundColor: dataset.backgroundColor }}
@@ -404,102 +420,129 @@ function PieChart({ data }: { data: any }) {
   const slices = data.labels.map((label: string, index: number) => {
     const value = dataset.data[index];
     const percentage = (value / total) * 100;
-    const color = dataset.backgroundColor?.[index] || `hsl(${(index * 360) / data.labels.length}, 70%, 50%)`;
+    const color =
+      dataset.backgroundColor?.[index] ||
+      `hsl(${(index * 360) / data.labels.length}, 70%, 50%)`;
     return { label, value, percentage, color };
   });
 
   return (
-    <div className="flex h-full flex-col gap-6 items-center justify-center">
-      <div className="flex flex-1 items-center gap-8 w-full justify-center">
+    <div className="flex h-full flex-col items-center justify-center gap-6">
+      <div className="flex w-full flex-1 items-center justify-center gap-8">
         {/* SVG Donut Chart */}
-        <svg className="w-64 h-64" viewBox="0 0 100 100">
+        <svg className="h-64 w-64" viewBox="0 0 100 100">
           {(() => {
             let currentAngle = -90; // Start from top
-            return slices.map((slice, index) => {
-              const angle = (slice.percentage / 100) * 360;
-              const startAngle = currentAngle;
-              currentAngle += angle;
+            return slices.map(
+              (
+                slice: {
+                  label: string;
+                  value: number;
+                  percentage: number;
+                  color: string;
+                },
+                index: number
+              ) => {
+                const angle = (slice.percentage / 100) * 360;
+                const startAngle = currentAngle;
+                currentAngle += angle;
 
-              // Calculate path for donut slice
-              const radius = 40;
-              const innerRadius = 25;
-              const centerX = 50;
-              const centerY = 50;
+                // Calculate path for donut slice
+                const radius = 40;
+                const innerRadius = 25;
+                const centerX = 50;
+                const centerY = 50;
 
-              const startRad = (startAngle * Math.PI) / 180;
-              const endRad = (currentAngle * Math.PI) / 180;
+                const startRad = (startAngle * Math.PI) / 180;
+                const endRad = (currentAngle * Math.PI) / 180;
 
-              const x1 = centerX + radius * Math.cos(startRad);
-              const y1 = centerY + radius * Math.sin(startRad);
-              const x2 = centerX + radius * Math.cos(endRad);
-              const y2 = centerY + radius * Math.sin(endRad);
-              const x3 = centerX + innerRadius * Math.cos(endRad);
-              const y3 = centerY + innerRadius * Math.sin(endRad);
-              const x4 = centerX + innerRadius * Math.cos(startRad);
-              const y4 = centerY + innerRadius * Math.sin(startRad);
+                const x1 = centerX + radius * Math.cos(startRad);
+                const y1 = centerY + radius * Math.sin(startRad);
+                const x2 = centerX + radius * Math.cos(endRad);
+                const y2 = centerY + radius * Math.sin(endRad);
+                const x3 = centerX + innerRadius * Math.cos(endRad);
+                const y3 = centerY + innerRadius * Math.sin(endRad);
+                const x4 = centerX + innerRadius * Math.cos(startRad);
+                const y4 = centerY + innerRadius * Math.sin(startRad);
 
-              const largeArc = angle > 180 ? 1 : 0;
+                const largeArc = angle > 180 ? 1 : 0;
 
-              const pathData = [
-                `M ${x1} ${y1}`,
-                `A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2}`,
-                `L ${x3} ${y3}`,
-                `A ${innerRadius} ${innerRadius} 0 ${largeArc} 0 ${x4} ${y4}`,
-                'Z',
-              ].join(' ');
+                const pathData = [
+                  `M ${x1} ${y1}`,
+                  `A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2}`,
+                  `L ${x3} ${y3}`,
+                  `A ${innerRadius} ${innerRadius} 0 ${largeArc} 0 ${x4} ${y4}`,
+                  "Z",
+                ].join(" ");
 
-              return (
-                <path
-                  key={index}
-                  d={pathData}
-                  fill={slice.color}
-                  className="transition-all hover:opacity-80 cursor-pointer"
-                  strokeWidth="0.5"
-                  stroke="white"
-                >
-                  <title>{`${slice.label}: ${slice.value} (${slice.percentage.toFixed(1)}%)`}</title>
-                </path>
-              );
-            });
+                return (
+                  <path
+                    className="cursor-pointer transition-all hover:opacity-80"
+                    d={pathData}
+                    fill={slice.color}
+                    key={index}
+                    stroke="white"
+                    strokeWidth="0.5"
+                  >
+                    <title>{`${slice.label}: ${slice.value} (${slice.percentage.toFixed(1)}%)`}</title>
+                  </path>
+                );
+              }
+            );
           })()}
 
           {/* Center text */}
           <text
+            className="fill-current font-semibold text-sm"
+            dominantBaseline="middle"
+            textAnchor="middle"
             x="50"
             y="50"
-            textAnchor="middle"
-            dominantBaseline="middle"
-            className="text-sm font-semibold fill-current"
           >
             Total
           </text>
           <text
+            className="fill-muted-foreground text-xs"
+            dominantBaseline="middle"
+            textAnchor="middle"
             x="50"
             y="58"
-            textAnchor="middle"
-            dominantBaseline="middle"
-            className="text-xs fill-muted-foreground"
           >
             {total}
           </text>
         </svg>
 
         {/* Legend */}
-        <div className="grid gap-3 max-w-xs">
-          {slices.map((slice, index) => (
-            <div key={index} className="flex items-center gap-3 group cursor-pointer">
+        <div className="grid max-w-xs gap-3">
+          {slices.map(
+            (
+              slice: {
+                label: string;
+                value: number;
+                percentage: number;
+                color: string;
+              },
+              index: number
+            ) => (
               <div
-                className="h-4 w-4 rounded-sm flex-shrink-0 transition-transform group-hover:scale-110"
-                style={{ backgroundColor: slice.color }}
-              />
-              <div className="flex-1 min-w-0">
-                <div className="font-medium text-sm truncate">{slice.label}</div>
-                <div className="text-muted-foreground text-xs">
-                  {slice.value} ({slice.percentage.toFixed(1)}%)
+                className="group flex cursor-pointer items-center gap-3"
+                key={index}
+              >
+                <div
+                  className="h-4 w-4 flex-shrink-0 rounded-sm transition-transform group-hover:scale-110"
+                  style={{ backgroundColor: slice.color }}
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="truncate font-medium text-sm">
+                    {slice.label}
+                  </div>
+                  <div className="text-muted-foreground text-xs">
+                    {slice.value} ({slice.percentage.toFixed(1)}%)
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          )}
         </div>
       </div>
     </div>
@@ -533,10 +576,10 @@ function ScatterChart({ data }: { data: any }) {
       {/* Chart Area */}
       <div className="relative flex-1">
         {/* Grid lines */}
-        <div className="absolute inset-0 flex flex-col justify-between pointer-events-none pl-12">
+        <div className="pointer-events-none absolute inset-0 flex flex-col justify-between pl-12">
           {[0, 0.25, 0.5, 0.75, 1].map((tick, i) => (
-            <div key={i} className="border-t border-muted flex items-center">
-              <span className="text-muted-foreground text-xs -ml-12">
+            <div className="flex items-center border-muted border-t" key={i}>
+              <span className="-ml-12 text-muted-foreground text-xs">
                 {(maxY - yRange * tick).toFixed(1)}
               </span>
             </div>
@@ -544,23 +587,23 @@ function ScatterChart({ data }: { data: any }) {
         </div>
 
         {/* Scatter points */}
-        <div className="relative h-full border-l border-b pl-12 pb-6">
+        <div className="relative h-full border-b border-l pb-6 pl-12">
           {points.map((point: any, index: number) => {
             const xPercent = ((point.x - minX) / xRange) * 100;
             const yPercent = ((point.y - minY) / yRange) * 100;
 
             return (
               <div
+                className="group -translate-x-1.5 -translate-y-1.5 absolute h-3 w-3 cursor-pointer rounded-full transition-all hover:scale-150"
                 key={index}
-                className="group absolute h-3 w-3 -translate-x-1.5 -translate-y-1.5 rounded-full transition-all hover:scale-150 cursor-pointer"
                 style={{
                   left: `${xPercent}%`,
                   bottom: `${yPercent}%`,
-                  backgroundColor: dataset.backgroundColor || '#3b82f6',
+                  backgroundColor: dataset.backgroundColor || "#3b82f6",
                 }}
                 title={`(${point.x}, ${point.y})`}
               >
-                <span className="absolute left-4 top-0 opacity-0 group-hover:opacity-100 text-xs bg-background px-1 rounded whitespace-nowrap">
+                <span className="absolute top-0 left-4 whitespace-nowrap rounded bg-background px-1 text-xs opacity-0 group-hover:opacity-100">
                   ({point.x}, {point.y})
                 </span>
               </div>
@@ -570,14 +613,20 @@ function ScatterChart({ data }: { data: any }) {
 
         {/* X-axis labels */}
         <div className="flex justify-between pl-12">
-          <span className="text-xs text-muted-foreground">{minX.toFixed(1)}</span>
-          <span className="text-xs text-muted-foreground">{((minX + maxX) / 2).toFixed(1)}</span>
-          <span className="text-xs text-muted-foreground">{maxX.toFixed(1)}</span>
+          <span className="text-muted-foreground text-xs">
+            {minX.toFixed(1)}
+          </span>
+          <span className="text-muted-foreground text-xs">
+            {((minX + maxX) / 2).toFixed(1)}
+          </span>
+          <span className="text-muted-foreground text-xs">
+            {maxX.toFixed(1)}
+          </span>
         </div>
       </div>
 
       {/* Dataset label */}
-      <div className="text-center text-muted-foreground text-sm font-medium">
+      <div className="text-center font-medium text-muted-foreground text-sm">
         {dataset.label}
       </div>
     </div>
@@ -605,10 +654,10 @@ function AreaChart({ data }: { data: any }) {
       {/* Chart Area */}
       <div className="relative flex-1">
         {/* Y-axis grid */}
-        <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
+        <div className="pointer-events-none absolute inset-0 flex flex-col justify-between">
           {[0, 0.25, 0.5, 0.75, 1].map((tick, i) => (
-            <div key={i} className="border-t border-muted flex items-center">
-              <span className="text-muted-foreground text-xs -ml-12">
+            <div className="flex items-center border-muted border-t" key={i}>
+              <span className="-ml-12 text-muted-foreground text-xs">
                 {(maxValue - range * tick).toFixed(1)}
               </span>
             </div>
@@ -616,7 +665,11 @@ function AreaChart({ data }: { data: any }) {
         </div>
 
         {/* SVG Area Chart */}
-        <svg className="w-full h-full pl-12" viewBox="0 0 100 100" preserveAspectRatio="none">
+        <svg
+          className="h-full w-full pl-12"
+          preserveAspectRatio="none"
+          viewBox="0 0 100 100"
+        >
           {data.datasets.map((dataset: any, dsIndex: number) => {
             // Create line points
             const linePoints = dataset.data.map((value: number, i: number) => {
@@ -627,38 +680,38 @@ function AreaChart({ data }: { data: any }) {
 
             // Create area path (includes baseline)
             const areaPath = [
-              `M 0,100`, // Start at bottom left
+              "M 0,100", // Start at bottom left
               ...dataset.data.map((value: number, i: number) => {
                 const x = (i / (dataset.data.length - 1)) * 100;
                 const y = 100 - ((value - minValue) / range) * 100;
                 return `L ${x},${y}`;
               }),
-              `L 100,100`, // End at bottom right
-              'Z',
-            ].join(' ');
+              "L 100,100", // End at bottom right
+              "Z",
+            ].join(" ");
 
-            const baseColor = dataset.backgroundColor || '#3b82f6';
-            const fillColor = baseColor.includes('hsl')
-              ? baseColor.replace('50%)', '50%, 0.2)')
-              : baseColor + '33'; // Add alpha for transparency
+            const baseColor = dataset.backgroundColor || "#3b82f6";
+            const fillColor = baseColor.includes("hsl")
+              ? baseColor.replace("50%)", "50%, 0.2)")
+              : baseColor + "33"; // Add alpha for transparency
 
             return (
               <g key={dsIndex}>
                 {/* Filled area */}
                 <path
+                  className="transition-all"
                   d={areaPath}
                   fill={fillColor}
-                  className="transition-all"
                 />
                 {/* Line */}
                 <polyline
-                  points={linePoints.join(' ')}
+                  className="transition-all"
                   fill="none"
+                  points={linePoints.join(" ")}
                   stroke={dataset.borderColor || baseColor}
-                  strokeWidth="0.5"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  className="transition-all"
+                  strokeWidth="0.5"
                 />
                 {/* Data points */}
                 {dataset.data.map((value: number, i: number) => {
@@ -666,12 +719,12 @@ function AreaChart({ data }: { data: any }) {
                   const y = 100 - ((value - minValue) / range) * 100;
                   return (
                     <circle
-                      key={i}
+                      className="hover:r-2 cursor-pointer transition-all"
                       cx={x}
                       cy={y}
-                      r="1"
                       fill={baseColor}
-                      className="hover:r-2 transition-all cursor-pointer"
+                      key={i}
+                      r="1"
                     >
                       <title>{`${data.labels[i]}: ${value}`}</title>
                     </circle>
@@ -683,11 +736,18 @@ function AreaChart({ data }: { data: any }) {
         </svg>
 
         {/* X-axis labels */}
-        <div className="flex justify-between mt-2 pl-12">
+        <div className="mt-2 flex justify-between pl-12">
           {data.labels.map((label: string, i: number) => {
-            if (i === 0 || i === Math.floor(data.labels.length / 2) || i === data.labels.length - 1) {
+            if (
+              i === 0 ||
+              i === Math.floor(data.labels.length / 2) ||
+              i === data.labels.length - 1
+            ) {
               return (
-                <span key={i} className="text-xs text-muted-foreground truncate">
+                <span
+                  className="truncate text-muted-foreground text-xs"
+                  key={i}
+                >
                   {label}
                 </span>
               );
@@ -699,9 +759,9 @@ function AreaChart({ data }: { data: any }) {
 
       {/* Legend */}
       {data.datasets.length > 1 && (
-        <div className="flex flex-wrap gap-4 justify-center">
+        <div className="flex flex-wrap justify-center gap-4">
           {data.datasets.map((dataset: any, index: number) => (
-            <div key={index} className="flex items-center gap-2">
+            <div className="flex items-center gap-2" key={index}>
               <div
                 className="h-3 w-3 rounded"
                 style={{ backgroundColor: dataset.backgroundColor }}

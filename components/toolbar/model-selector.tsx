@@ -3,6 +3,10 @@
 import type { Session } from "next-auth";
 import { startTransition, useMemo, useOptimistic, useState } from "react";
 import { saveChatModelAsCookie } from "@/app/(chat)/actions";
+import {
+  CheckCircleFillIcon,
+  ChevronDownIcon,
+} from "@/components/shared/icons";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -13,7 +17,6 @@ import {
 import { entitlementsByUserType } from "@/lib/ai/entitlements";
 import { chatModels } from "@/lib/ai/models";
 import { cn } from "@/lib/utils";
-import { CheckCircleFillIcon, ChevronDownIcon } from "./icons";
 
 export function ModelSelector({
   session,

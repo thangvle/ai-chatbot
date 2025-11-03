@@ -31,8 +31,13 @@ RUN bun install
 # Build stage - compile the application
 FROM base AS builder
 
-# Copy installed dependencies from deps stage
-COPY --from=deps /app/node_modules ./node_modules
+# Install build dependencies for native npm modules
+RUN apk add --no-cache \
+    python3 \
+    make \
+    g++ \
+    gcc \
+    linux-headers
 
 # Copy application source code
 COPY . .
@@ -42,9 +47,7 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV SKIP_ENV_VALIDATION=1
 
-# Build the Next.js application
-# Note: Database migrations are handled separately at runtime
-# to support dynamic connection strings
+# Install dependencies and build
 RUN bun run build
 
 # Production runtime stage - minimal image with only runtime dependencies
@@ -68,10 +71,6 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # Copy database migration files and script for runtime migrations
 COPY --from=builder --chown=nextjs:nodejs /app/lib/db/migrations ./lib/db/migrations
 COPY --from=builder --chown=nextjs:nodejs /app/lib/db/migrate.ts ./lib/db/migrate.ts
-
-# Copy necessary dependencies for migrations
-# Only copy what's needed for runtime
-COPY --from=deps --chown=nextjs:nodejs /app/node_modules ./node_modules
 
 # Create startup script to handle migrations before starting the app
 RUN echo '#!/bin/sh' > /app/start.sh && \
