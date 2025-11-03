@@ -18,9 +18,14 @@
 
 ## Demo Video
 
-<a href="https://www.loom.com/share/4afd045d70f548419b661522990fe488">
-  <img src="https://cdn.loom.com/sessions/thumbnails/4afd045d70f548419b661522990fe488-with-play.gif" alt="Demo Video">
-</a>
+<div>
+    <a href="https://www.loom.com/share/4afd045d70f548419b661522990fe488">
+      <p>AI Chat App - Watch Video</p>
+    </a>
+    <a href="https://www.loom.com/share/4afd045d70f548419b661522990fe488">
+      <img style="max-width:300px;" src="https://cdn.loom.com/sessions/thumbnails/4afd045d70f548419b661522990fe488-0ae7411059bf4e5a-full-play.gif">
+    </a>
+  </div>
 
 ## Features
 
