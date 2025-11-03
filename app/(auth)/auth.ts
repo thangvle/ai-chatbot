@@ -85,29 +85,19 @@ export const {
   ],
   callbacks: {
     async signIn({ user, account }) {
-      console.log("SignIn callback triggered:", {
-        provider: account?.provider,
-        email: user.email,
-        hasId: !!user.id,
-      });
-
       if (account?.provider === "google" && user.email) {
         try {
           const users = await getUser(user.email);
-          console.log("Found existing users:", users.length);
 
           if (users.length === 0) {
             // Create new user if doesn't exist
-            console.log("Creating new OAuth user for:", user.email);
             const [newUser] = await createOAuthUser(user.email);
             user.id = newUser.id;
             user.type = "regular";
-            console.log("Created new user with ID:", newUser.id);
           } else {
             const [existingUser] = users;
             user.id = existingUser.id;
             user.type = "regular";
-            console.log("Using existing user with ID:", existingUser.id);
           }
           return true;
         } catch (error) {

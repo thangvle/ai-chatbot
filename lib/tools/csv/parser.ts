@@ -3,7 +3,7 @@
  * Parses CSV files using PapaParse and provides statistical analysis
  */
 
-import Papa from 'papaparse';
+import Papa from "papaparse";
 
 /**
  * Parsed CSV data structure
@@ -20,7 +20,7 @@ export type ParsedCSV = {
  */
 export type ColumnStats = {
   column: string;
-  type: 'numeric' | 'text' | 'date' | 'mixed';
+  type: "numeric" | "text" | "date" | "mixed";
   count: number;
   nullCount: number;
   uniqueCount: number;
@@ -68,34 +68,38 @@ export function parseCSV(csvContent: string): ParsedCSV {
   });
 
   if (parseResult.errors && parseResult.errors.length > 0) {
-    console.warn('CSV parsing warnings:', parseResult.errors);
+    console.warn("CSV parsing warnings:", parseResult.errors);
   }
 
   if (!parseResult.data || parseResult.data.length === 0) {
-    throw new Error('CSV file is empty or could not be parsed');
+    throw new Error("CSV file is empty or could not be parsed");
   }
 
   // Extract headers from the first row keys
   const headers = Object.keys(parseResult.data[0]);
 
   // Convert rows and parse numeric values
-  const rows: Record<string, string | number>[] = parseResult.data.map((row: Record<string, string>) => {
-    const convertedRow: Record<string, string | number> = {};
+  const rows: Record<string, string | number>[] = parseResult.data.map(
+    (row: Record<string, string>) => {
+      const convertedRow: Record<string, string | number> = {};
 
-    for (const header of headers) {
-      const value = row[header];
-      // Try to parse as number, otherwise keep as string
-      convertedRow[header] = isNumeric(value) ? Number.parseFloat(value) : value;
+      for (const header of headers) {
+        const value = row[header];
+        // Try to parse as number, otherwise keep as string
+        convertedRow[header] = isNumeric(value)
+          ? Number.parseFloat(value)
+          : value;
+      }
+
+      return convertedRow;
     }
-
-    return convertedRow;
-  });
+  );
 
   return {
     headers,
     rows,
     rowCount: rows.length,
-    columnCount: headers.length
+    columnCount: headers.length,
   };
 }
 
@@ -105,7 +109,7 @@ export function parseCSV(csvContent: string): ParsedCSV {
  * @returns true if numeric
  */
 function isNumeric(value: string): boolean {
-  if (value === '' || value === null || value === undefined) {
+  if (value === "" || value === null || value === undefined) {
     return false;
   }
   const num = Number.parseFloat(value);
@@ -120,19 +124,19 @@ const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}|\d{1,2}\/\d{1,2}\/\d{2,4}/;
  * @param values - Array of values from the column
  * @returns Data type
  */
-function detectColumnType(values: (string | number)[]): ColumnStats['type'] {
+function detectColumnType(values: (string | number)[]): ColumnStats["type"] {
   let numericCount = 0;
   let textCount = 0;
   let dateCount = 0;
 
   for (const value of values) {
-    if (value === null || value === undefined || value === '') {
+    if (value === null || value === undefined || value === "") {
       continue;
     }
 
-    if (typeof value === 'number') {
+    if (typeof value === "number") {
       numericCount++;
-    } else if (typeof value === 'string') {
+    } else if (typeof value === "string") {
       // Check if it's a date
       if (DATE_PATTERN.test(value)) {
         dateCount++;
@@ -146,16 +150,16 @@ function detectColumnType(values: (string | number)[]): ColumnStats['type'] {
 
   // Determine primary type (>80% threshold)
   if (numericCount / total > 0.8) {
-    return 'numeric';
+    return "numeric";
   }
   if (dateCount / total > 0.8) {
-    return 'date';
+    return "date";
   }
   if (textCount / total > 0.8) {
-    return 'text';
+    return "text";
   }
 
-  return 'mixed';
+  return "mixed";
 }
 
 /**
@@ -174,7 +178,7 @@ function calculateNumericStats(values: number[]) {
     max: sorted.at(-1) ?? 0,
     mean: Number.parseFloat(mean.toFixed(2)),
     median,
-    sum: Number.parseFloat(sum.toFixed(2))
+    sum: Number.parseFloat(sum.toFixed(2)),
   };
 }
 
@@ -183,7 +187,10 @@ function calculateNumericStats(values: number[]) {
  * @param values - Array of values
  * @returns Most common value and its count
  */
-function findMostCommon(values: (string | number)[]): { value: string; count: number } {
+function findMostCommon(values: (string | number)[]): {
+  value: string;
+  count: number;
+} {
   const frequency: Record<string, number> = {};
 
   for (const val of values) {
@@ -192,7 +199,7 @@ function findMostCommon(values: (string | number)[]): { value: string; count: nu
   }
 
   let maxCount = 0;
-  let mostCommon = '';
+  let mostCommon = "";
 
   for (const [value, count] of Object.entries(frequency)) {
     if (count > maxCount) {
@@ -214,8 +221,10 @@ export function analyzeColumn(
   columnName: string,
   rows: Record<string, string | number>[]
 ): ColumnStats {
-  const values = rows.map(row => row[columnName]);
-  const nonNullValues = values.filter(v => v !== null && v !== undefined && v !== '');
+  const values = rows.map((row) => row[columnName]);
+  const nonNullValues = values.filter(
+    (v) => v !== null && v !== undefined && v !== ""
+  );
 
   const type = detectColumnType(nonNullValues);
   const uniqueValues = new Set(nonNullValues);
@@ -225,18 +234,20 @@ export function analyzeColumn(
     type,
     count: nonNullValues.length,
     nullCount: rows.length - nonNullValues.length,
-    uniqueCount: uniqueValues.size
+    uniqueCount: uniqueValues.size,
   };
 
   // Add numeric stats if applicable
-  if (type === 'numeric') {
-    const numericValues = nonNullValues.filter(v => typeof v === 'number') as number[];
+  if (type === "numeric") {
+    const numericValues = nonNullValues.filter(
+      (v) => typeof v === "number"
+    ) as number[];
     const numericStats = calculateNumericStats(numericValues);
     Object.assign(stats, numericStats);
   }
 
   // Add text stats
-  if (type === 'text' || type === 'mixed') {
+  if (type === "text" || type === "mixed") {
     const { value, count } = findMostCommon(nonNullValues);
     stats.mostCommon = value;
     stats.mostCommonCount = count;
@@ -252,21 +263,24 @@ export function analyzeColumn(
  */
 export function analyzeData(parsed: ParsedCSV): DataAnalysis {
   // Analyze each column
-  const columnStats = parsed.headers.map(header =>
+  const columnStats = parsed.headers.map((header) =>
     analyzeColumn(header, parsed.rows)
   );
 
   // Generate recommendations for visualization
-  const recommendations = generateVisualizationRecommendations(parsed, columnStats);
+  const recommendations = generateVisualizationRecommendations(
+    parsed,
+    columnStats
+  );
 
   return {
     summary: {
       totalRows: parsed.rowCount,
       totalColumns: parsed.columnCount,
-      columnNames: parsed.headers
+      columnNames: parsed.headers,
     },
     columnStats,
-    recommendations
+    recommendations,
   };
 }
 
@@ -279,30 +293,32 @@ export function analyzeData(parsed: ParsedCSV): DataAnalysis {
 function generateVisualizationRecommendations(
   _parsed: ParsedCSV,
   columnStats: ColumnStats[]
-): DataAnalysis['recommendations'] {
-  const numericColumns = columnStats.filter(c => c.type === 'numeric');
-  const textColumns = columnStats.filter(c => c.type === 'text');
-  const dateColumns = columnStats.filter(c => c.type === 'date');
+): DataAnalysis["recommendations"] {
+  const numericColumns = columnStats.filter((c) => c.type === "numeric");
+  const textColumns = columnStats.filter((c) => c.type === "text");
+  const dateColumns = columnStats.filter((c) => c.type === "date");
 
   // Time series data (date + numeric)
   if (dateColumns.length > 0 && numericColumns.length > 0) {
     return {
-      suggestedChartType: 'line',
+      suggestedChartType: "line",
       xAxis: dateColumns[0].column,
-      yAxis: numericColumns.map(c => c.column),
-      reasoning: 'Time series data detected. Line chart shows trends over time.'
+      yAxis: numericColumns.map((c) => c.column),
+      reasoning:
+        "Time series data detected. Line chart shows trends over time.",
     };
   }
 
   // Category with single numeric (column chart - vertical bars)
   if (textColumns.length > 0 && numericColumns.length === 1) {
-    const categoryCol = textColumns.find(c => c.uniqueCount < 20); // Reasonable categories
+    const categoryCol = textColumns.find((c) => c.uniqueCount < 20); // Reasonable categories
     if (categoryCol) {
       return {
-        suggestedChartType: 'column',
+        suggestedChartType: "column",
         xAxis: categoryCol.column,
         yAxis: [numericColumns[0].column],
-        reasoning: 'Categorical data with numeric values. Column chart shows comparison between categories.'
+        reasoning:
+          "Categorical data with numeric values. Column chart shows comparison between categories.",
       };
     }
   }
@@ -310,40 +326,42 @@ function generateVisualizationRecommendations(
   // Multiple numeric columns (line chart for comparison)
   if (numericColumns.length >= 2) {
     return {
-      suggestedChartType: 'line',
+      suggestedChartType: "line",
       xAxis: numericColumns[0].column,
-      yAxis: numericColumns.slice(1).map(c => c.column),
-      reasoning: 'Multiple numeric columns detected. Line chart shows comparison between variables.'
+      yAxis: numericColumns.slice(1).map((c) => c.column),
+      reasoning:
+        "Multiple numeric columns detected. Line chart shows comparison between variables.",
     };
   }
 
   // Distribution analysis (histogram)
   if (numericColumns.length === 1) {
     return {
-      suggestedChartType: 'histogram',
+      suggestedChartType: "histogram",
       xAxis: numericColumns[0].column,
       yAxis: [],
-      reasoning: 'Single numeric column. Histogram shows data distribution.'
+      reasoning: "Single numeric column. Histogram shows data distribution.",
     };
   }
 
   // Pie chart for categorical distribution
   if (textColumns.length > 0) {
-    const categoryCol = textColumns.find(c => c.uniqueCount < 10);
+    const categoryCol = textColumns.find((c) => c.uniqueCount < 10);
     if (categoryCol) {
       return {
-        suggestedChartType: 'pie',
+        suggestedChartType: "pie",
         xAxis: categoryCol.column,
         yAxis: [],
-        reasoning: 'Categorical data with few categories. Pie chart shows proportions.'
+        reasoning:
+          "Categorical data with few categories. Pie chart shows proportions.",
       };
     }
   }
 
   // Default fallback to column chart (vertical bars)
   return {
-    suggestedChartType: 'column',
-    reasoning: 'General purpose column chart for data overview.'
+    suggestedChartType: "column",
+    reasoning: "General purpose column chart for data overview.",
   };
 }
 
@@ -355,53 +373,47 @@ function generateVisualizationRecommendations(
  */
 export async function fetchCSVContent(url: string): Promise<string> {
   try {
-    console.log('[fetchCSVContent] Fetching CSV from URL:', url);
-
     // Import R2 client dynamically (server-side only)
-    const { GetObjectCommand } = await import('@aws-sdk/client-s3');
-    const { r2Client, r2BucketName } = await import('@/lib/blob/r2');
-
-    console.log('[fetchCSVContent] R2 bucket:', r2BucketName);
+    const { GetObjectCommand } = await import("@aws-sdk/client-s3");
+    const { r2Client, r2BucketName } = await import("@/lib/blob/r2");
 
     // Extract key from proxy URL
     let key: string;
 
-    if (url.startsWith('/api/files/get')) {
+    if (url.startsWith("/api/files/get")) {
       // Parse proxy URL to get the key parameter
-      const urlObj = new URL(url, 'http://localhost');
-      const keyParam = urlObj.searchParams.get('key');
+      const urlObj = new URL(url, "http://localhost");
+      const keyParam = urlObj.searchParams.get("key");
 
       if (!keyParam) {
-        throw new Error('No key parameter found in URL');
+        throw new Error("No key parameter found in URL");
       }
 
       key = keyParam;
-      console.log('[fetchCSVContent] Extracted key from proxy URL:', key);
-    } else if (url.includes('r2.cloudflarestorage.com')) {
+    } else if (url.includes("r2.cloudflarestorage.com")) {
       // Extract key from R2 URL
       const match = url.match(/r2\.cloudflarestorage\.com\/([^?]+)/);
       if (!match || !match[1]) {
-        throw new Error('Could not extract key from R2 URL');
+        throw new Error("Could not extract key from R2 URL");
       }
       key = match[1];
-      console.log('[fetchCSVContent] Extracted key from R2 URL:', key);
     } else {
-      console.error('[fetchCSVContent] Unsupported URL format:', url);
-      throw new Error(`Unsupported URL format: ${url}. Expected proxy URL (/api/files/get?key=...) or R2 URL.`);
+      console.error("[fetchCSVContent] Unsupported URL format:", url);
+      throw new Error(
+        `Unsupported URL format: ${url}. Expected proxy URL (/api/files/get?key=...) or R2 URL.`
+      );
     }
 
     // Fetch file directly from R2
-    console.log('[fetchCSVContent] Fetching from R2 with key:', key);
     const getCommand = new GetObjectCommand({
       Bucket: r2BucketName,
       Key: key,
     });
 
     const response = await r2Client.send(getCommand);
-    console.log('[fetchCSVContent] R2 response received, ContentType:', response.ContentType);
 
     if (!response.Body) {
-      throw new Error('File not found in R2 bucket');
+      throw new Error("File not found in R2 bucket");
     }
 
     // Convert stream to string
@@ -410,19 +422,17 @@ export async function fetchCSVContent(url: string): Promise<string> {
       chunks.push(chunk);
     }
     const buffer = Buffer.concat(chunks);
-    const content = buffer.toString('utf-8');
-
-    console.log('[fetchCSVContent] CSV content fetched, length:', content.length);
+    const content = buffer.toString("utf-8");
 
     if (!content || content.trim().length === 0) {
-      throw new Error('CSV file is empty');
+      throw new Error("CSV file is empty");
     }
 
     return content;
   } catch (error) {
-    console.error('[fetchCSVContent] Error:', error);
+    console.error("[fetchCSVContent] Error:", error);
     throw new Error(
-      `Error fetching CSV from R2: ${error instanceof Error ? error.message : 'Unknown error'}`
+      `Error fetching CSV from R2: ${error instanceof Error ? error.message : "Unknown error"}`
     );
   }
 }

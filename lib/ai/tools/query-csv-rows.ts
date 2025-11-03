@@ -7,8 +7,8 @@ import { tool } from "ai";
 import { z } from "zod";
 import {
   fetchCSVContent,
-  parseCSV,
   type ParsedCSV,
+  parseCSV,
 } from "@/lib/tools/csv/parser";
 
 // Tool parameters schema
@@ -24,7 +24,13 @@ const queryCSVRowsParametersSchema = z.object({
       z.object({
         column: z.string().describe("Column name to filter on"),
         operator: z
-          .enum(["equals", "contains", "greater_than", "less_than", "not_equals"])
+          .enum([
+            "equals",
+            "contains",
+            "greater_than",
+            "less_than",
+            "not_equals",
+          ])
           .describe("Comparison operator"),
         value: z
           .union([z.string(), z.number()])
@@ -61,7 +67,12 @@ function applyFilters(
   rows: ParsedCSV["rows"],
   filters: Array<{
     column: string;
-    operator: "equals" | "contains" | "greater_than" | "less_than" | "not_equals";
+    operator:
+      | "equals"
+      | "contains"
+      | "greater_than"
+      | "less_than"
+      | "not_equals";
     value: string | number;
   }>
 ): ParsedCSV["rows"] {
@@ -81,10 +92,16 @@ function applyFilters(
 
       switch (filter.operator) {
         case "equals":
-          return String(cellValue).toLowerCase() === String(filter.value).toLowerCase();
+          return (
+            String(cellValue).toLowerCase() ===
+            String(filter.value).toLowerCase()
+          );
 
         case "not_equals":
-          return String(cellValue).toLowerCase() !== String(filter.value).toLowerCase();
+          return (
+            String(cellValue).toLowerCase() !==
+            String(filter.value).toLowerCase()
+          );
 
         case "contains":
           return String(cellValue)
@@ -92,14 +109,20 @@ function applyFilters(
             .includes(String(filter.value).toLowerCase());
 
         case "greater_than":
-          if (typeof cellValue === "number" && typeof filter.value === "number") {
+          if (
+            typeof cellValue === "number" &&
+            typeof filter.value === "number"
+          ) {
             return cellValue > filter.value;
           }
           // Fallback to string comparison
           return String(cellValue) > String(filter.value);
 
         case "less_than":
-          if (typeof cellValue === "number" && typeof filter.value === "number") {
+          if (
+            typeof cellValue === "number" &&
+            typeof filter.value === "number"
+          ) {
             return cellValue < filter.value;
           }
           // Fallback to string comparison
@@ -143,10 +166,7 @@ function selectColumns(
  * @param headers - Column headers
  * @returns Formatted table string
  */
-function formatRowsAsTable(
-  rows: ParsedCSV["rows"],
-  headers: string[]
-): string {
+function formatRowsAsTable(rows: ParsedCSV["rows"], headers: string[]): string {
   if (rows.length === 0) {
     return "No rows found.";
   }
@@ -217,12 +237,6 @@ export function queryCSVRows({
           const latestFile = csvFiles.at(-1);
           if (latestFile) {
             actualFileUrl = latestFile.url;
-            console.log(
-              "[queryCSVRows] Auto-detected CSV file:",
-              latestFile.name,
-              "at",
-              actualFileUrl
-            );
           }
         }
 
@@ -240,33 +254,16 @@ export function queryCSVRows({
       }
 
       try {
-        console.log("[queryCSVRows] Starting query");
-        console.log("[queryCSVRows] File URL:", actualFileUrl);
-        console.log("[queryCSVRows] Filters:", JSON.stringify(filters));
-        console.log("[queryCSVRows] Columns:", columns);
-        console.log("[queryCSVRows] Limit:", safeLimit, "Offset:", offset);
-
         // Fetch and parse CSV
         const csvContent = await fetchCSVContent(actualFileUrl);
         const parsed = parseCSV(csvContent);
 
-        console.log(
-          "[queryCSVRows] CSV parsed, total rows:",
-          parsed.rowCount
-        );
-
         // Apply filters
         let filteredRows = applyFilters(parsed.rows, filters || []);
-        console.log(
-          "[queryCSVRows] After filters:",
-          filteredRows.length,
-          "rows"
-        );
 
         // Select specific columns
-        const selectedHeaders = columns && columns.length > 0
-          ? columns
-          : parsed.headers;
+        const selectedHeaders =
+          columns && columns.length > 0 ? columns : parsed.headers;
 
         filteredRows = selectColumns(filteredRows, columns);
 
@@ -274,26 +271,21 @@ export function queryCSVRows({
         const totalMatchingRows = filteredRows.length;
         const paginatedRows = filteredRows.slice(offset, offset + safeLimit);
 
-        console.log(
-          "[queryCSVRows] Returning",
-          paginatedRows.length,
-          "rows (offset:",
-          offset,
-          ")"
+        // Format results
+        const formattedTable = formatRowsAsTable(
+          paginatedRows,
+          selectedHeaders
         );
 
-        // Format results
-        const formattedTable = formatRowsAsTable(paginatedRows, selectedHeaders);
-
         // Build response message
-        let message = `# CSV Query Results\n\n`;
+        let message = "# CSV Query Results\n\n";
         message += `**File:** ${csvFiles.find((f) => f.url === actualFileUrl)?.name || "CSV file"}\n`;
         message += `**Total rows in file:** ${parsed.rowCount}\n`;
         message += `**Matching rows:** ${totalMatchingRows}\n`;
         message += `**Showing:** ${paginatedRows.length} rows (offset: ${offset})\n\n`;
 
         if (filters && filters.length > 0) {
-          message += `**Filters applied:**\n`;
+          message += "**Filters applied:**\n";
           for (const filter of filters) {
             message += `- ${filter.column} ${filter.operator} "${filter.value}"\n`;
           }

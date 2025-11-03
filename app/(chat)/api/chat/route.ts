@@ -88,13 +88,11 @@ export function getStreamContext() {
 
 export async function POST(request: Request) {
   let requestBody: PostRequestBody;
-  console.log("request.body: ", request.body);
   try {
     const json = await request.json();
     requestBody = postRequestBodySchema.parse(json);
-    console.log(requestBody);
   } catch (e) {
-    console.log(e);
+    console.error(e);
     return new ChatSDKError("bad_request:api").toResponse();
   }
 
@@ -169,9 +167,8 @@ export async function POST(request: Request) {
 
                 try {
                   // Parse CSV and provide summary to LLM
-                  const { fetchCSVContent, parseCSV, analyzeData } = await import(
-                    "@/lib/tools/csv/parser"
-                  );
+                  const { fetchCSVContent, parseCSV, analyzeData } =
+                    await import("@/lib/tools/csv/parser");
 
                   const csvContent = await fetchCSVContent(part.url);
                   const parsed = parseCSV(csvContent);

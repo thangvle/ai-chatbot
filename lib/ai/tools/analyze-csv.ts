@@ -85,12 +85,6 @@ export function analyzeCSV({
           const latestFile = csvFiles.at(-1);
           if (latestFile) {
             actualFileUrl = latestFile.url;
-            console.log(
-              "[analyzeCSV] Auto-detected CSV file:",
-              latestFile.name,
-              "at",
-              actualFileUrl
-            );
           }
         }
 
@@ -108,26 +102,11 @@ export function analyzeCSV({
       }
 
       try {
-        console.log("[analyzeCSV] Starting analysis");
-        console.log("[analyzeCSV] File URL:", actualFileUrl);
-        console.log("[analyzeCSV] Chart type:", chartType);
-        console.log("[analyzeCSV] Include stats:", includeStats);
-
         // Fetch CSV content from URL
         const csvContent = await fetchCSVContent(actualFileUrl);
-        console.log(
-          "[analyzeCSV] CSV fetched successfully, length:",
-          csvContent.length
-        );
 
         // Parse CSV
         const parsed = parseCSV(csvContent);
-        console.log(
-          "[analyzeCSV] CSV parsed successfully, rows:",
-          parsed.rowCount,
-          "columns:",
-          parsed.columnCount
-        );
 
         // Filter columns if specified
         let filteredParsed = parsed;
@@ -203,10 +182,6 @@ export function analyzeCSV({
 
           // Validate chartConfig can be stringified before sending
           const chartConfigString = JSON.stringify(chartConfig);
-          console.log(
-            "[analyzeCSV] Chart config serialized successfully, size:",
-            chartConfigString.length
-          );
 
           dataStream.write({
             type: "data-chartDelta",
@@ -220,7 +195,6 @@ export function analyzeCSV({
             data: null,
             transient: true,
           });
-          console.log("[analyzeCSV] Stream finished successfully");
 
           // Save chart to database asynchronously (non-blocking)
           // The promise runs in background while tool returns immediately
@@ -232,12 +206,7 @@ export function analyzeCSV({
               content: chartConfigString,
               userId: session.user.id,
             })
-              .then(() => {
-                console.log(
-                  "[analyzeCSV] Chart document saved to database successfully:",
-                  artifactId
-                );
-              })
+              .then(() => {})
               .catch((error) => {
                 console.error(
                   "[analyzeCSV] Failed to save chart document:",
