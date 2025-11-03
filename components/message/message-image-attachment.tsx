@@ -31,6 +31,9 @@ export default function MessageImageAttachment({
   // Check if the attachment is an image
   const isImage = contentType?.startsWith("image") && imageSource;
 
+  // Use unoptimized for blob URLs and proxy URLs from our API
+  const shouldUnoptimize = !!file || imageSource.includes("/api/files/get");
+
   if (!isImage) {
     return null;
   }
@@ -47,7 +50,7 @@ export default function MessageImageAttachment({
               className="max-h-64 max-w-xs object-cover transition-transform duration-200 group-hover:scale-105"
               height={256}
               src={imageSource}
-              unoptimized={!!file} // Don't optimize blob URLs
+              unoptimized={shouldUnoptimize}
               width={320}
             />
 
@@ -81,7 +84,7 @@ export default function MessageImageAttachment({
               priority
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 90vw, 80vw"
               src={imageSource}
-              unoptimized={!!file}
+              unoptimized={shouldUnoptimize}
             />
           </div>
 

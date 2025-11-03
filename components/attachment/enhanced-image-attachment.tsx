@@ -33,6 +33,9 @@ export const EnhancedImageAttachment = ({
   // Check if the attachment is an image
   const isImage = contentType?.startsWith("image") && imageSource;
 
+  // Use unoptimized for blob URLs and proxy URLs from our API
+  const shouldUnoptimize = !!file || imageSource.includes("/api/files/get");
+
   if (!isImage) {
     return null;
   }
@@ -46,7 +49,7 @@ export const EnhancedImageAttachment = ({
             className="size-full object-cover transition-transform duration-200 group-hover:scale-105"
             height={64}
             src={imageSource}
-            unoptimized={!!file} // Don't optimize blob URLs
+            unoptimized={shouldUnoptimize}
             width={64}
           />
 
@@ -77,7 +80,7 @@ export const EnhancedImageAttachment = ({
               priority
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 70vw"
               src={imageSource}
-              unoptimized={!!file}
+              unoptimized={shouldUnoptimize}
             />
           </div>
 
