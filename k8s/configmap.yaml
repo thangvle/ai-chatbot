@@ -1,0 +1,13 @@
+# ConfigMap for non-sensitive configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ai-chatbot-config
+  namespace: ai-chatbot
+data:
+  NODE_ENV: "production"
+  NEXT_TELEMETRY_DISABLED: "1"
+  PORT: "3000"
+  HOSTNAME: "0.0.0.0"
+  POSTGRES_DB: "chatbot"
+  POSTGRES_USER: "chatbot"

@@ -1,0 +1,29 @@
+# Production overlay using external managed services
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: ai-chatbot
+
+# Base configuration
+resources:
+  - ../../namespace.yaml
+  - ../../configmap.yaml
+  - ../../secrets.yaml
+  - ../../deployment.yaml
+  - ../../service.yaml
+  - ../../ingress.yaml
+  - ../../hpa.yaml
+  # NOTE: postgres.yaml and redis.yaml are NOT included
+  # We use external managed services instead
+
+# Production-specific patches
+patchesStrategicMerge:
+  - deployment-patch.yaml
+  - secrets-patch.yaml
+
+# Production labels
+commonLabels:
+  environment: production
+
+commonAnnotations:
+  managed-by: kustomize

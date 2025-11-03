@@ -1,0 +1,117 @@
+# AI Chatbot Application Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-chatbot
+  namespace: ai-chatbot
+  labels:
+    app: ai-chatbot
+spec:
+  replicas: 1  # Single replica for small VPS (change to 2+ for production)
+  selector:
+    matchLabels:
+      app: ai-chatbot
+  template:
+    metadata:
+      labels:
+        app: ai-chatbot
+    spec:
+      containers:
+        - name: ai-chatbot
+          image: ai-chatbot:latest  # Replace with your registry/image:tag
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+              name: http
+          env:
+            # ConfigMap values
+            - name: NODE_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: ai-chatbot-config
+                  key: NODE_ENV
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: ai-chatbot-config
+                  key: PORT
+            - name: HOSTNAME
+              valueFrom:
+                configMapKeyRef:
+                  name: ai-chatbot-config
+                  key: HOSTNAME
+            - name: NEXT_TELEMETRY_DISABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: ai-chatbot-config
+                  key: NEXT_TELEMETRY_DISABLED
+
+            # Secret values
+            - name: AUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: ai-chatbot-secrets
+                  key: AUTH_SECRET
+            - name: GOOGLE_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: ai-chatbot-secrets
+                  key: GOOGLE_CLIENT_ID
+            - name: GOOGLE_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: ai-chatbot-secrets
+                  key: GOOGLE_CLIENT_SECRET
+            - name: AI_GATEWAY_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ai-chatbot-secrets
+                  key: AI_GATEWAY_API_KEY
+            - name: BLOB_READ_WRITE_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: ai-chatbot-secrets
+                  key: BLOB_READ_WRITE_TOKEN
+
+            # Database connection (constructed from service)
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ai-chatbot-secrets
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_URL
+              value: "postgres://chatbot:$(POSTGRES_PASSWORD)@postgres:5432/chatbot"
+
+            # Redis connection (constructed from service)
+            - name: REDIS_URL
+              value: "redis://redis:6379"
+
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+
+      # Image pull secrets if using private registry
+      # imagePullSecrets:
+      #   - name: registry-secret

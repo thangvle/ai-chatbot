@@ -1,0 +1,17 @@
+# AI Chatbot Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-chatbot
+  namespace: ai-chatbot
+  labels:
+    app: ai-chatbot
+spec:
+  type: ClusterIP  # Change to LoadBalancer or use Ingress
+  ports:
+    - port: 80
+      targetPort: 3000
+      protocol: TCP
+      name: http
+  selector:
+    app: ai-chatbot

@@ -1,0 +1,28 @@
+# Ingress for AI Chatbot (requires Ingress Controller)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ai-chatbot
+  namespace: ai-chatbot
+  annotations:
+    # Uncomment and configure based on your Ingress Controller
+    # nginx.ingress.kubernetes.io/rewrite-target: /
+    # cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    # kubernetes.io/ingress.class: nginx
+spec:
+  # TLS configuration (requires cert-manager or manual cert creation)
+  # tls:
+  #   - hosts:
+  #       - chatbot.example.com
+  #     secretName: ai-chatbot-tls
+  rules:
+    - host: chatbot.example.com  # Replace with your domain
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ai-chatbot
+                port:
+                  number: 80

@@ -1,0 +1,85 @@
+# Docker Compose for local development with self-hosted services
+# For production with managed services (Upstash, Vercel Postgres, etc.),
+# use docker-compose.prod.yml
+version: '3.8'
+
+services:
+  # PostgreSQL database (local development only)
+  postgres:
+    image: postgres:16-alpine
+    container_name: ai-chatbot-postgres
+    environment:
+      POSTGRES_DB: chatbot
+      POSTGRES_USER: chatbot
+      POSTGRES_PASSWORD: chatbot_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chatbot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    profiles:
+      - local  # Only runs with 'docker-compose --profile local up'
+
+  # Redis cache (local development only)
+  redis:
+    image: redis:7-alpine
+    container_name: ai-chatbot-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    profiles:
+      - local  # Only runs with 'docker-compose --profile local up'
+
+  # Next.js application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ai-chatbot-app
+    ports:
+      - "6000:3000"
+    environment:
+      # Load from .env.local file or environment variables
+      # For local dev with self-hosted services, these defaults are used
+      # For production, override with your managed service URLs
+      POSTGRES_URL: ${POSTGRES_URL:-postgres://chatbot:chatbot_password@postgres:5432/chatbot}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+
+      # Auth secrets (required)
+      AUTH_SECRET: ${AUTH_SECRET}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+
+      # AI Gateway
+      AI_GATEWAY_API_KEY: ${AI_GATEWAY_API_KEY}
+
+      # Blob storage
+      BLOB_READ_WRITE_TOKEN: ${BLOB_READ_WRITE_TOKEN}
+
+      # Node environment
+      NODE_ENV: ${NODE_ENV:-production}
+      NEXT_TELEMETRY_DISABLED: 1
+    depends_on:
+      postgres:
+        condition: service_healthy
+        required: false  # Not required if using external services
+      redis:
+        condition: service_healthy
+        required: false  # Not required if using external services
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
