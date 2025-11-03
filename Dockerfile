@@ -16,7 +16,7 @@ WORKDIR /app
 FROM base AS deps
 
 # Copy package files for dependency installation
-COPY package.json bun.lock* ./
+COPY package.json ./
 
 # Install dependencies using bun with frozen lockfile for reproducibility
 RUN bun install
