@@ -25,6 +25,7 @@ import { myProvider } from "@/lib/ai/providers";
 import { analyzeCSV } from "@/lib/ai/tools/analyze-csv";
 import { createDocument } from "@/lib/ai/tools/create-document";
 import { getWeather } from "@/lib/ai/tools/get-weather";
+import { queryCSVRows } from "@/lib/ai/tools/query-csv-rows";
 import { requestSuggestions } from "@/lib/ai/tools/request-suggestions";
 import { updateDocument } from "@/lib/ai/tools/update-document";
 import { isProductionEnvironment } from "@/lib/constants";
@@ -277,6 +278,7 @@ analyzeCSV({
                   "updateDocument",
                   "requestSuggestions",
                   "analyzeCSV",
+                  "queryCSVRows",
                 ],
           experimental_transform: smoothStream({ chunking: "word" }),
           tools: {
@@ -288,6 +290,7 @@ analyzeCSV({
               dataStream,
             }),
             analyzeCSV: analyzeCSV({ session, dataStream, csvFiles }),
+            queryCSVRows: queryCSVRows({ csvFiles }),
           },
           experimental_telemetry: {
             isEnabled: isProductionEnvironment,
