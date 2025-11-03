@@ -84,8 +84,3 @@ Key environment variables you'll need to configure:
 - `AUTH_SECRET` - Secret key for authentication
 - API keys for your chosen AI model provider(s)
 - Storage configuration (if using file uploads)
-
-
-## License
-
-This project is open source and available under the MIT License.
