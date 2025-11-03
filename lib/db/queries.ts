@@ -347,7 +347,9 @@ export async function getDocumentsById({ id }: { id: string }) {
       .orderBy(asc(document.createdAt));
 
     return documents;
-  } catch (_error) {
+  } catch (error) {
+    console.error('[getDocumentsById] Error fetching documents:', error);
+    console.error('[getDocumentsById] Document ID:', id);
     throw new ChatSDKError(
       "bad_request:database",
       "Failed to get documents by id"

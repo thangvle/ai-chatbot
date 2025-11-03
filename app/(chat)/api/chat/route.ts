@@ -149,39 +149,90 @@ export async function POST(request: Request) {
     const messagesFromDb = await getMessagesByChatId({ id });
     let uiMessages = [...convertToUIMessages(messagesFromDb), message];
 
-    // Convert CSV files to text hints for the LLM (don't parse yet, let the tool do it)
-    uiMessages = uiMessages.map((msg) => {
-      if (msg.role === "user" && msg.parts) {
-        const processedParts = msg.parts.flatMap((part) => {
-          // Check if this is a CSV file
-          if (
-            part.type === "file" &&
-            (part.mediaType === "text/csv" ||
-              part.mediaType === "application/csv")
-          ) {
-            // Replace CSV file with text hint for the LLM
-            // Include the URL so the analyzeCSV tool can fetch it
-            return [
-              {
-                type: "text" as const,
-                text: `[CSV File Attached: ${part.name}]
-File URL: ${part.url}
+    // Extract CSV file URLs and parse them inline for the LLM
+    const csvFiles: Array<{ url: string; name: string }> = [];
 
-Note: Use the analyzeCSV tool with fileUrl="${part.url}" to analyze and visualize this data.`,
-              },
-            ];
-          }
-          // Return non-CSV parts as-is
-          return [part];
-        });
+    uiMessages = await Promise.all(
+      uiMessages.map(async (msg) => {
+        if (msg.role === "user" && msg.parts) {
+          const processedParts = await Promise.all(
+            msg.parts.map(async (part) => {
+              // Check if this is a CSV file
+              if (
+                part.type === "file" &&
+                (part.mediaType === "text/csv" ||
+                  part.mediaType === "application/csv")
+              ) {
+                // Store CSV file reference
+                csvFiles.push({ url: part.url, name: part.name });
 
-        return {
-          ...msg,
-          parts: processedParts,
-        };
-      }
-      return msg;
-    });
+                try {
+                  // Parse CSV and provide summary to LLM
+                  const { fetchCSVContent, parseCSV, analyzeData } = await import(
+                    "@/lib/tools/csv/parser"
+                  );
+
+                  const csvContent = await fetchCSVContent(part.url);
+                  const parsed = parseCSV(csvContent);
+                  const analysis = analyzeData(parsed);
+
+                  // Create a concise summary for the LLM with clear instructions
+                  const csvSummary = `CSV File Received: "${part.name}"
+
+Summary:
+- Rows: ${analysis.summary.totalRows}
+- Columns: ${analysis.summary.columnNames.join(", ")}
+- Recommended Chart: ${analysis.recommendations.suggestedChartType}
+
+IMPORTANT - File Access Information:
+The CSV file is accessible at: ${part.url}
+
+When the user asks to analyze, visualize, or create charts from this data, you MUST use the analyzeCSV tool with these parameters:
+- fileUrl: "${part.url}" (REQUIRED - do not modify this URL)
+- chartType: "auto" or specific type like "bar", "line", "pie"
+- includeStats: true
+
+Example tool call:
+analyzeCSV({
+  "fileUrl": "${part.url}",
+  "chartType": "auto",
+  "includeStats": true
+})`;
+
+                  return {
+                    type: "text" as const,
+                    text: csvSummary,
+                  };
+                } catch (error) {
+                  console.error("Error parsing CSV summary:", error);
+                  return {
+                    type: "text" as const,
+                    text: `CSV File Uploaded: "${part.name}"
+
+The file is stored at: ${part.url}
+
+To analyze or visualize this data when requested, use the analyzeCSV tool:
+analyzeCSV({
+  "fileUrl": "${part.url}",
+  "chartType": "auto",
+  "includeStats": true
+})`,
+                  };
+                }
+              }
+              // Return non-CSV parts as-is
+              return part;
+            })
+          );
+
+          return {
+            ...msg,
+            parts: processedParts,
+          };
+        }
+        return msg;
+      })
+    );
 
     const { longitude, latitude, city, country } = geolocation(request);
 
@@ -236,7 +287,7 @@ Note: Use the analyzeCSV tool with fileUrl="${part.url}" to analyze and visualiz
               session,
               dataStream,
             }),
-            analyzeCSV: analyzeCSV({ dataStream }),
+            analyzeCSV: analyzeCSV({ session, dataStream, csvFiles }),
           },
           experimental_telemetry: {
             isEnabled: isProductionEnvironment,

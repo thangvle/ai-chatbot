@@ -294,26 +294,26 @@ function generateVisualizationRecommendations(
     };
   }
 
-  // Category with single numeric (bar chart)
+  // Category with single numeric (column chart - vertical bars)
   if (textColumns.length > 0 && numericColumns.length === 1) {
     const categoryCol = textColumns.find(c => c.uniqueCount < 20); // Reasonable categories
     if (categoryCol) {
       return {
-        suggestedChartType: 'bar',
+        suggestedChartType: 'column',
         xAxis: categoryCol.column,
         yAxis: [numericColumns[0].column],
-        reasoning: 'Categorical data with numeric values. Bar chart shows comparison between categories.'
+        reasoning: 'Categorical data with numeric values. Column chart shows comparison between categories.'
       };
     }
   }
 
-  // Multiple numeric columns (scatter for correlation)
+  // Multiple numeric columns (line chart for comparison)
   if (numericColumns.length >= 2) {
     return {
-      suggestedChartType: 'scatter',
+      suggestedChartType: 'line',
       xAxis: numericColumns[0].column,
-      yAxis: [numericColumns[1].column],
-      reasoning: 'Multiple numeric columns detected. Scatter plot shows relationships between variables.'
+      yAxis: numericColumns.slice(1).map(c => c.column),
+      reasoning: 'Multiple numeric columns detected. Line chart shows comparison between variables.'
     };
   }
 
@@ -340,10 +340,10 @@ function generateVisualizationRecommendations(
     }
   }
 
-  // Default fallback
+  // Default fallback to column chart (vertical bars)
   return {
-    suggestedChartType: 'bar',
-    reasoning: 'General purpose bar chart for data overview.'
+    suggestedChartType: 'column',
+    reasoning: 'General purpose column chart for data overview.'
   };
 }
 
@@ -355,9 +355,13 @@ function generateVisualizationRecommendations(
  */
 export async function fetchCSVContent(url: string): Promise<string> {
   try {
+    console.log('[fetchCSVContent] Fetching CSV from URL:', url);
+
     // Import R2 client dynamically (server-side only)
     const { GetObjectCommand } = await import('@aws-sdk/client-s3');
     const { r2Client, r2BucketName } = await import('@/lib/blob/r2');
+
+    console.log('[fetchCSVContent] R2 bucket:', r2BucketName);
 
     // Extract key from proxy URL
     let key: string;
@@ -372,6 +376,7 @@ export async function fetchCSVContent(url: string): Promise<string> {
       }
 
       key = keyParam;
+      console.log('[fetchCSVContent] Extracted key from proxy URL:', key);
     } else if (url.includes('r2.cloudflarestorage.com')) {
       // Extract key from R2 URL
       const match = url.match(/r2\.cloudflarestorage\.com\/([^?]+)/);
@@ -379,17 +384,21 @@ export async function fetchCSVContent(url: string): Promise<string> {
         throw new Error('Could not extract key from R2 URL');
       }
       key = match[1];
+      console.log('[fetchCSVContent] Extracted key from R2 URL:', key);
     } else {
-      throw new Error('Unsupported URL format. Expected proxy URL or R2 URL.');
+      console.error('[fetchCSVContent] Unsupported URL format:', url);
+      throw new Error(`Unsupported URL format: ${url}. Expected proxy URL (/api/files/get?key=...) or R2 URL.`);
     }
 
     // Fetch file directly from R2
+    console.log('[fetchCSVContent] Fetching from R2 with key:', key);
     const getCommand = new GetObjectCommand({
       Bucket: r2BucketName,
       Key: key,
     });
 
     const response = await r2Client.send(getCommand);
+    console.log('[fetchCSVContent] R2 response received, ContentType:', response.ContentType);
 
     if (!response.Body) {
       throw new Error('File not found in R2 bucket');
@@ -403,12 +412,15 @@ export async function fetchCSVContent(url: string): Promise<string> {
     const buffer = Buffer.concat(chunks);
     const content = buffer.toString('utf-8');
 
+    console.log('[fetchCSVContent] CSV content fetched, length:', content.length);
+
     if (!content || content.trim().length === 0) {
       throw new Error('CSV file is empty');
     }
 
     return content;
   } catch (error) {
+    console.error('[fetchCSVContent] Error:', error);
     throw new Error(
       `Error fetching CSV from R2: ${error instanceof Error ? error.message : 'Unknown error'}`
     );

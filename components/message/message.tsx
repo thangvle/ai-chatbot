@@ -4,6 +4,7 @@ import equal from "fast-deep-equal";
 import { motion } from "framer-motion";
 import { memo, useState } from "react";
 import { PreviewAttachment } from "@/components/attachment/preview-attachment";
+import { ChartToolResult } from "@/components/chart/chart-tool-result";
 import { useDataStream } from "@/components/data/data-stream-provider";
 import { DocumentToolResult } from "@/components/document/document";
 import { DocumentPreview } from "@/components/document/document-preview";
@@ -273,6 +274,41 @@ const PurePreviewMessage = ({
                               type="request-suggestions"
                             />
                           )
+                        }
+                      />
+                    )}
+                  </ToolContent>
+                </Tool>
+              );
+            }
+
+            if (type === "tool-analyzeCSV") {
+              const { toolCallId, state } = part;
+
+              return (
+                <Tool defaultOpen={true} key={toolCallId}>
+                  <ToolHeader state={state} type="tool-analyzeCSV" />
+                  <ToolContent>
+                    {state === "input-available" && (
+                      <ToolInput input={part.input} />
+                    )}
+                    {state === "output-available" && (
+                      <ToolOutput
+                        errorText={
+                          part.output && "error" in part.output
+                            ? String(part.output.error)
+                            : undefined
+                        }
+                        output={
+                          part.output && "success" in part.output && part.output.success ? (
+                            <ChartToolResult
+                              result={{
+                                id: part.output.artifactId || `chart-${toolCallId}`,
+                                title: part.output.title || "Data Visualization",
+                                chartType: part.output.chartType || "auto",
+                              }}
+                            />
+                          ) : null
                         }
                       />
                     )}
